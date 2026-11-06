@@ -15,6 +15,7 @@ export default defineConfig({
         name: '小账本',
         short_name: '小账本',
         description: '餐补结余与规划支出账本',
+        lang: 'zh-CN',
         theme_color: '#10B981',
         background_color: '#F7F8F6',
         display: 'standalone',
