@@ -107,12 +107,18 @@ export function PlanningProvider({ children }: { children: ReactNode }) {
       throw new Error('eventId is required for spend and replenish entries');
     }
     if (input.kind === 'spend') {
-      const entry: SpendEntry = { ...base, eventId };
-      setState((previous) => ({ ...previous, spends: [...previous.spends, entry] }));
+      setState((previous) => {
+        if (!previous.events.some((event) => event.id === eventId)) return previous;
+        const entry: SpendEntry = { ...base, eventId };
+        return { ...previous, spends: [...previous.spends, entry] };
+      });
       return;
     }
-    const entry: ReplenishEntry = { ...base, eventId };
-    setState((previous) => ({ ...previous, replenishes: [...previous.replenishes, entry] }));
+    setState((previous) => {
+      if (!previous.events.some((event) => event.id === eventId)) return previous;
+      const entry: ReplenishEntry = { ...base, eventId };
+      return { ...previous, replenishes: [...previous.replenishes, entry] };
+    });
   }, []);
 
   const updateEntry = useCallback((kind: EntryKind, id: string, input: Omit<EntryInput, 'kind'>) => {
@@ -126,6 +132,9 @@ export function PlanningProvider({ children }: { children: ReactNode }) {
               : entry,
           ),
         };
+      }
+      if (input.eventId !== undefined && !previous.events.some((event) => event.id === input.eventId)) {
+        return previous;
       }
       function updateLinked<T extends SpendEntry | ReplenishEntry>(entries: T[]): T[] {
         return entries.map((entry) =>
