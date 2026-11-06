@@ -26,6 +26,10 @@ export function Onboarding() {
       setError('请输入有效金额');
       return;
     }
+    if (!startDate || startDate > todayKey()) {
+      setError('请选择不晚于今天的起始日期');
+      return;
+    }
     const message = updateSettings({
       monthlyBudget: budgetCents,
       monthlyMinimum: minimumCents,
@@ -48,20 +52,47 @@ export function Onboarding() {
       <form className="card form" onSubmit={submit}>
         <label className="field">
           <span>月度餐补预算</span>
-          <MoneyInput value={budget} onChange={setBudget} ariaLabel="月度餐补预算" />
+          <MoneyInput
+            value={budget}
+            onChange={(value) => {
+              setBudget(value);
+              setError('');
+            }}
+            ariaLabel="月度餐补预算"
+          />
         </label>
         <label className="field">
           <span>月度保底</span>
-          <MoneyInput value={minimum} onChange={setMinimum} ariaLabel="月度保底" />
+          <MoneyInput
+            value={minimum}
+            onChange={(value) => {
+              setMinimum(value);
+              setError('');
+            }}
+            ariaLabel="月度保底"
+          />
         </label>
         {rates && (
-          <p className="muted">
-            自由额度 {formatYuan(rates.freeAllowance)} · 日均 {formatYuan(rates.dailyNormal)} / {formatYuan(rates.dailyMinimum)}
+          <p className="muted" aria-live="polite">
+            自由额度 {formatYuan(rates.freeAllowance)} · 日均正常 {formatYuan(rates.dailyNormal)} / 日均保底 {formatYuan(rates.dailyMinimum)}
           </p>
+        )}
+        {budgetCents !== null && minimumCents !== null && minimumCents >= budgetCents && (
+          <p className="form-error" role="alert">月度保底必须小于月度预算</p>
         )}
         <label className="field">
           <span>起始日期</span>
-          <input type="date" value={startDate} max={todayKey()} onChange={(event) => setStartDate(event.target.value)} aria-label="起始日期" />
+          <input
+            type="date"
+            value={startDate}
+            max={todayKey()}
+            required
+            onChange={(event) => {
+              setStartDate(event.target.value);
+              setError('');
+            }}
+            aria-label="起始日期"
+          />
         </label>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button className="button button--primary" type="submit">开始记账</button>
