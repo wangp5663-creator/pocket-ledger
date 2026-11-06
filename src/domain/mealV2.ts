@@ -397,48 +397,29 @@ export function customizePeriod(
   if (startDate < normalized.settings.startDate) {
     return { state: normalized, error: '不能早于起始日期' };
   }
-  if (startDate <= today && endDate < today) {
-    return { state: normalized, error: '当前周期必须包含今天' };
-  }
 
   const restores = [...normalized.restores].sort((a, b) => a.date.localeCompare(b.date));
   if (restores.length === 0) {
     return { state: normalized, error: '还没有周期' };
   }
 
+  const anchor = [...restores].reverse().find((event) => event.date <= startDate) ?? restores[0];
+  const periodSettings: MealSettingsV2 = {
+    monthlyBudget: anchor.monthlyBudget,
+    monthlyMinimum: anchor.monthlyMinimum,
+    startDate: normalized.settings.startDate,
+    cycleStartDay: anchor.cycleStartDay ?? normalized.settings.cycleStartDay ?? 1,
+  };
+
   const now = new Date().toISOString();
   const nextStart = addDays(endDate, 1);
-  let nextRestores: RestoreEvent[];
-
-  if (startDate <= today) {
-    const currentIndex = restores.reduce(
-      (found, event, index) => (event.date <= today ? index : found),
-      -1,
-    );
-    if (currentIndex < 0) {
-      return { state: normalized, error: '还没有当前周期' };
-    }
-    const anchor = restores[currentIndex];
-    const previous = restores[currentIndex - 1];
-    if (previous && startDate <= previous.date) {
-      return { state: normalized, error: '开始日期不能早于上一周期' };
-    }
-
-    nextRestores = restores.slice(0, currentIndex);
-    if (startDate > anchor.date) {
-      nextRestores.push(anchor);
-    }
-    nextRestores.push(createRestoreEvent(normalized.settings, startDate, now));
-  } else {
-    nextRestores = restores.filter((event) => event.date < startDate);
-    if (nextRestores.length === 0) {
-      return { state: normalized, error: '开始日期不能早于起始日期' };
-    }
-    nextRestores.push(createRestoreEvent(normalized.settings, startDate, now));
-  }
-
-  nextRestores.push(createRestoreEvent(normalized.settings, nextStart, now));
-  nextRestores.sort((a, b) => a.date.localeCompare(b.date));
+  const kept = restores.filter((event) => event.date < startDate || event.date > endDate);
+  const nextExists = restores.some((event) => event.date === nextStart);
+  const nextRestores = [
+    ...kept,
+    createRestoreEvent(periodSettings, startDate, now),
+    ...(nextExists ? [] : [createRestoreEvent(periodSettings, nextStart, now)]),
+  ].sort((a, b) => a.date.localeCompare(b.date));
 
   return { state: { ...normalized, restores: nextRestores } };
 }

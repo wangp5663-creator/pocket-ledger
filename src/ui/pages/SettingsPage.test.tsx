@@ -77,7 +77,7 @@ describe('SettingsPage v2', () => {
   it('opens the custom period calendar', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SettingsPage />, { meal: mealFixture() });
-    await user.click(screen.getByRole('button', { name: '自定义当前 / 未来周期' }));
+    await user.click(screen.getByRole('button', { name: '自定义周期（含历史）' }));
     expect(screen.getByRole('dialog', { name: '自定义周期' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '保存周期' })).toBeInTheDocument();
   });

@@ -133,9 +133,9 @@ export function SettingsPage() {
             setCalendarOpen(true);
           }}
         >
-          自定义当前 / 未来周期
+          自定义周期（含历史）
         </button>
-        <p className="muted">恢复后：负数清零、正数带入；手动恢复每天最多一次。</p>
+        <p className="muted">日历可调整历史、当前和未来周期；恢复后负数清零、正数带入；手动恢复每天最多一次。</p>
       </section>
 
       {calendarOpen && (

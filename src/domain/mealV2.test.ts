@@ -289,9 +289,49 @@ describe('custom periods', () => {
     expect(status.endDate).toBe('2026-11-19');
   });
 
-  it('rejects a current period that does not contain today', () => {
-    expect(customizePeriod(state, '2026-11-10', '2026-11-01', '2026-11-09').error).toBe(
-      '当前周期必须包含今天',
+  it('customizes a past period and preserves later periods', () => {
+    const pastState: MealStateV2 = {
+      settings,
+      records: {},
+      restores: [
+        createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z'),
+        createRestoreEvent(settings, '2026-12-01', '2026-12-01T00:00:00.000Z'),
+      ],
+    };
+    const result = customizePeriod(pastState, '2026-12-10', '2026-11-05', '2026-11-20');
+    expect(result.error).toBeUndefined();
+    expect(result.state.restores.map((event) => event.date)).toEqual([
+      '2026-11-01',
+      '2026-11-05',
+      '2026-11-21',
+      '2026-12-01',
+    ]);
+    const status = currentMealStatus(result.state, '2026-12-10');
+    expect(status.startDate).toBe('2026-12-01');
+  });
+
+  it('merges existing periods inside a custom range', () => {
+    const merged: MealStateV2 = {
+      settings,
+      records: {},
+      restores: [
+        createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z'),
+        createRestoreEvent(settings, '2026-11-15', '2026-11-15T00:00:00.000Z'),
+        createRestoreEvent(settings, '2026-12-01', '2026-12-01T00:00:00.000Z'),
+      ],
+    };
+    const result = customizePeriod(merged, '2026-12-10', '2026-11-05', '2026-11-20');
+    expect(result.state.restores.map((event) => event.date)).toEqual([
+      '2026-11-01',
+      '2026-11-05',
+      '2026-11-21',
+      '2026-12-01',
+    ]);
+  });
+
+  it('rejects dates before the app start date', () => {
+    expect(customizePeriod(state, '2026-11-10', '2026-10-25', '2026-11-05').error).toBe(
+      '不能早于起始日期',
     );
   });
 });
