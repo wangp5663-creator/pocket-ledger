@@ -31,11 +31,34 @@ describe('SettingsPage v2', () => {
       settings: { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: addDays(today, -5) },
     });
     renderWithProviders(<SettingsPage />, { meal });
-    await user.click(screen.getByRole('button', { name: '立即恢复 20 元额度' }));
+    await user.click(screen.getByRole('button', { name: '立即恢复正常额度' }));
     await user.click(screen.getByRole('button', { name: '确认恢复' }));
 
     const saved = JSON.parse(localStorage.getItem(MEAL_V2_STORAGE_KEY) ?? '{}');
     expect(saved.restores.some((restore: { date: string }) => restore.date === today)).toBe(true);
-    expect(screen.getByText('已恢复 20 元额度')).toBeInTheDocument();
+    expect(screen.getByText('已恢复正常额度')).toBeInTheDocument();
+  });
+
+  it('shows configured daily rates in the current period', () => {
+    const meal = mealFixture({
+      settings: { monthlyBudget: 80000, monthlyMinimum: 45000, startDate: todayKey() },
+    });
+    renderWithProviders(<SettingsPage />, { meal });
+    expect(screen.getByText('正常 ¥26.67')).toBeInTheDocument();
+  });
+
+  it('disables manual restore when today already has a restore', () => {
+    renderWithProviders(<SettingsPage />, { meal: mealFixture() });
+    expect(screen.getByRole('button', { name: '今天已经恢复过' })).toBeDisabled();
+  });
+
+  it('rejects a minimum that is not less than the budget', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettingsPage />, { meal: mealFixture() });
+    const budget = screen.getByLabelText('月度餐补预算');
+    await user.clear(budget);
+    await user.type(budget, '400');
+    await user.click(screen.getByRole('button', { name: '保存设置' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('月度保底必须小于月度预算');
   });
 });

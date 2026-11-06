@@ -55,7 +55,7 @@ export function SettingsPage() {
       return;
     }
     setError('');
-    setMessage('已恢复 20 元额度');
+    setMessage('已恢复正常额度');
   };
 
   return (
@@ -74,11 +74,11 @@ export function SettingsPage() {
             <MoneyInput value={minimum} onChange={setMinimum} ariaLabel="月度保底" />
           </label>
           <p className="muted">
-            自由额度 {formatYuan(rates.freeAllowance)} · 日均 {formatYuan(rates.dailyNormal)} / {formatYuan(rates.dailyMinimum)}
+            自由额度 {formatYuan(rates.freeAllowance)} · 日均正常 {formatYuan(rates.dailyNormal)} / 日均保底 {formatYuan(rates.dailyMinimum)}
           </p>
           <p className="muted">起始日期 {state.settings.startDate ? formatDisplayDate(state.settings.startDate) : '未设置'}</p>
           {error && <p className="form-error" role="alert">{error}</p>}
-          {message && <p className="positive">{message}</p>}
+          {message && <p className="positive" role="status" aria-live="polite">{message}</p>}
           <button className="button button--primary" type="submit">保存设置</button>
         </form>
       </section>
@@ -88,7 +88,7 @@ export function SettingsPage() {
         <div className="summary-grid">
           <div><span className="muted">开始日期</span><strong>{formatDisplayDate(status.startDate)}</strong></div>
           <div><span className="muted">开始额度</span><strong>{formatYuan(status.dailyNormal)}/天</strong></div>
-          <div><span className="muted">当前阶段</span><strong>{status.switchDate ? '保底 15 元' : '正常 20 元'}</strong></div>
+          <div><span className="muted">当前阶段</span><strong>{status.switchDate ? `保底 ${formatYuan(status.dailyMinimum)}` : `正常 ${formatYuan(status.dailyNormal)}`}</strong></div>
           <div><span className="muted">自由额度</span><strong>{status.mode === 'normal' ? formatYuan(status.freeRemaining) : '无'}</strong></div>
         </div>
         <button
@@ -97,7 +97,7 @@ export function SettingsPage() {
           disabled={alreadyRestoredToday}
           onClick={() => setRestoreOpen(true)}
         >
-          {alreadyRestoredToday ? '今天已经恢复过' : '立即恢复 20 元额度'}
+          {alreadyRestoredToday ? '今天已经恢复过' : '立即恢复正常额度'}
         </button>
         <p className="muted">恢复后：负数清零、正数带入；手动恢复每天最多一次。</p>
       </section>
@@ -121,7 +121,7 @@ export function SettingsPage() {
       {restoreOpen && (
         <ConfirmDialog
           open
-          title="立即恢复 20 元额度？"
+          title="立即恢复正常额度？"
           message="负数将清零、正数将带入新周期；手动恢复每天最多一次。"
           confirmLabel="确认恢复"
           onCancel={() => setRestoreOpen(false)}
@@ -142,6 +142,7 @@ export function SettingsPage() {
           onConfirm={() => {
             clearRecords();
             setClearMealOpen(false);
+            setError('');
             setMessage('餐补数据已清空');
           }}
         />
@@ -157,6 +158,7 @@ export function SettingsPage() {
           onConfirm={() => {
             clearAll();
             setClearPlanOpen(false);
+            setError('');
             setMessage('规划账数据已清空');
           }}
         />
