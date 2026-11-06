@@ -105,3 +105,56 @@ describe('remove event', () => {
     expect(next.inflows).toHaveLength(1);
   });
 });
+
+describe('event timeline ordering', () => {
+  it('orders same-date entries by createdAt', () => {
+    const sameDate: PlanningState = {
+      events: [{ id: 'e3', name: '同日', replenishPlan: [], createdAt }],
+      spends: [
+        { id: 's4', eventId: 'e3', date: '2026-11-05', amount: 100000, createdAt: '2026-11-05T10:00:00.000Z' },
+      ],
+      replenishes: [
+        { id: 'r4', eventId: 'e3', date: '2026-11-05', amount: 40000, createdAt: '2026-11-05T09:00:00.000Z' },
+      ],
+      inflows: [],
+    };
+    const timeline = eventTimeline(sameDate, 'e3');
+    expect(timeline.map((item) => item.kind)).toEqual(['replenish', 'spend']);
+    expect(timeline.map((item) => item.outstandingAfter)).toEqual([-40000, 60000]);
+  });
+});
+
+describe('missing event', () => {
+  it('returns empty timeline and comparison and leaves state unchanged on removal', () => {
+    expect(eventTimeline(state, 'missing')).toEqual([]);
+    expect(replenishPlanComparison(state, 'missing')).toEqual([]);
+    expect(removeEvent(state, 'missing')).toEqual(state);
+    expect(eventProgress(state, 'missing')).toEqual({ spent: 0, replenished: 0, outstanding: 0, overPlanned: undefined });
+  });
+});
+
+describe('plan edge cases', () => {
+  it('sums duplicate plan months and treats zero planned total as a real plan', () => {
+    const edge: PlanningState = {
+      events: [
+        {
+          id: 'e4',
+          name: '边界',
+          plannedTotal: 0,
+          replenishPlan: [
+            { month: '2026-12', amount: 1000 },
+            { month: '2026-12', amount: 2000 },
+          ],
+          createdAt,
+        },
+      ],
+      spends: [{ id: 's5', eventId: 'e4', date: '2026-11-01', amount: 100, createdAt }],
+      replenishes: [],
+      inflows: [],
+    };
+    expect(replenishPlanComparison(edge, 'e4')).toEqual([
+      { month: '2026-12', planned: 3000, actual: 0, diff: -3000 },
+    ]);
+    expect(eventProgress(edge, 'e4').overPlanned).toBe(100);
+  });
+});
