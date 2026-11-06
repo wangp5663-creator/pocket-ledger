@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildMealTimeline,
   createRestoreEvent,
+  currentMealStatus,
   defaultMealStateV2,
   deriveRates,
   missingMealDates,
@@ -81,5 +83,77 @@ describe('record helpers', () => {
     const next = removeMealRecord(withRecord, '2026-11-02');
     expect(next.records).toEqual({});
     expect(withRecord.records['2026-11-02']).toBeDefined();
+  });
+});
+
+const baseState: MealStateV2 = {
+  settings,
+  records: {},
+  restores: [createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z')],
+};
+
+function withRecords(records: MealStateV2['records']): MealStateV2 {
+  return { ...baseState, records };
+}
+
+describe('meal timeline', () => {
+  it('keeps 20 yuan per day and accumulates balance before threshold', () => {
+    const state = withRecords({
+      '2026-11-01': { spent: 2500, updatedAt: '2026-11-01T00:00:00.000Z' },
+      '2026-11-02': { spent: 1500, updatedAt: '2026-11-02T00:00:00.000Z' },
+    });
+    const periods = buildMealTimeline(state, '2026-11-10');
+    expect(periods).toHaveLength(1);
+    expect(periods[0].openingBalance).toBe(0);
+    expect(periods[0].days.map((day) => day.allowance)).toEqual([2000, 2000]);
+    expect(periods[0].endingBalance).toBe(0);
+    expect(periods[0].switchDate).toBeUndefined();
+  });
+
+  it('switches after the triggering day and rebases by plus free allowance', () => {
+    const state = withRecords({
+      '2026-11-01': { spent: 17000, updatedAt: '2026-11-01T00:00:00.000Z' },
+      '2026-11-02': { spent: 2000, updatedAt: '2026-11-02T00:00:00.000Z' },
+    });
+    const periods = buildMealTimeline(state, '2026-11-10');
+    const days = periods[0].days;
+    expect(days[0].allowance).toBe(2000);
+    expect(days[0].switchedToMinimum).toBe(true);
+    expect(days[0].balanceAfter).toBe(0); // -15000 + 15000
+    expect(periods[0].switchDate).toBe('2026-11-01');
+    expect(days[1].allowance).toBe(1500);
+    expect(days[1].balanceAfter).toBe(-500);
+  });
+
+  it('carries positive balance into the next period and clears negative', () => {
+    const state: MealStateV2 = {
+      settings,
+      records: {
+        '2026-11-02': { spent: 1000, updatedAt: '2026-11-02T00:00:00.000Z' },
+        '2026-12-02': { spent: 3500, updatedAt: '2026-12-02T00:00:00.000Z' },
+      },
+      restores: [
+        createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z'),
+        createRestoreEvent(settings, '2026-12-01', '2026-12-01T00:00:00.000Z'),
+      ],
+    };
+    const periods = buildMealTimeline(state, '2026-12-10');
+    expect(periods[0].endingBalance).toBe(1000);
+    expect(periods[1].openingBalance).toBe(1000);
+    expect(periods[1].endingBalance).toBe(-500);
+  });
+
+  it('reports current status and free quota remaining', () => {
+    const state = withRecords({
+      '2026-11-01': { spent: 17000, updatedAt: '2026-11-01T00:00:00.000Z' },
+      '2026-11-02': { spent: 1000, updatedAt: '2026-11-02T00:00:00.000Z' },
+    });
+    const status = currentMealStatus(state, '2026-11-10');
+    expect(status.mode).toBe('minimum');
+    expect(status.balance).toBe(500);
+    expect(status.freeRemaining).toBe(0);
+    expect(status.distanceToMinimum).toBe(0);
+    expect(status.dailyAllowance).toBe(1500);
+    expect(status.hasRecordToday).toBe(false);
   });
 });

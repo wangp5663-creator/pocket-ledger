@@ -119,3 +119,158 @@ export function removeMealRecord(state: MealStateV2, date: string): MealStateV2 
   delete records[date];
   return { ...state, records };
 }
+
+export interface MealDay {
+  date: string;
+  spent: number;
+  note?: string;
+  allowance: number;
+  dailyBalance: number;
+  balanceAfter: number;
+  switchedToMinimum: boolean;
+}
+
+export interface MealPeriod {
+  restore: RestoreEvent;
+  startDate: string;
+  endDate: string;
+  openingBalance: number;
+  endingBalance: number;
+  carry: number;
+  net: number;
+  switchDate?: string;
+  days: MealDay[];
+  totalSpent: number;
+  totalAllowance: number;
+}
+
+export interface MealStatus {
+  mode: MealMode;
+  balance: number;
+  dailyAllowance: number;
+  freeRemaining: number;
+  distanceToMinimum: number;
+  freeAllowance: number;
+  dailyNormal: number;
+  dailyMinimum: number;
+  startDate: string;
+  endDate: string;
+  switchDate?: string;
+  hasRecordToday: boolean;
+  todayRecord?: MealRecordV2;
+}
+
+export function buildMealTimeline(state: MealStateV2, today: string): MealPeriod[] {
+  const restores = [...state.restores].sort((a, b) => a.date.localeCompare(b.date));
+  if (restores.length === 0) return [];
+
+  const periods: MealPeriod[] = [];
+  let previousEnd = 0;
+
+  for (let index = 0; index < restores.length; index += 1) {
+    const restore = restores[index];
+    const next = restores[index + 1];
+    const startDate = restore.date;
+    const endDate = next ? addDays(next.date, -1) : today;
+    if (!endDate || endDate < startDate) continue;
+
+    let balance = index === 0 ? 0 : previousEnd;
+    const openingBalance = balance;
+    let mode: MealMode = 'normal';
+    let switchDate: string | undefined;
+    const days: MealDay[] = [];
+    let totalSpent = 0;
+    let totalAllowance = 0;
+
+    const dates = Object.keys(state.records)
+      .filter((date) => date >= startDate && date <= endDate)
+      .sort();
+
+    for (const date of dates) {
+      const record = state.records[date];
+      const allowance = mode === 'normal' ? restore.dailyNormal : restore.dailyMinimum;
+      const dailyBalance = allowance - record.spent;
+      balance += dailyBalance;
+      totalSpent += record.spent;
+      totalAllowance += allowance;
+
+      let switchedToMinimum = false;
+      if (mode === 'normal' && balance <= -restore.freeAllowance) {
+        switchedToMinimum = true;
+        mode = 'minimum';
+        switchDate = date;
+        balance += restore.freeAllowance;
+      }
+
+      days.push({
+        date,
+        spent: record.spent,
+        note: record.note,
+        allowance,
+        dailyBalance,
+        balanceAfter: balance,
+        switchedToMinimum,
+      });
+    }
+
+    const endingBalance = balance;
+    periods.push({
+      restore,
+      startDate,
+      endDate,
+      openingBalance,
+      endingBalance,
+      carry: Math.max(0, endingBalance),
+      net: endingBalance - openingBalance,
+      switchDate,
+      days,
+      totalSpent,
+      totalAllowance,
+    });
+    previousEnd = Math.max(0, endingBalance);
+  }
+
+  return periods;
+}
+
+export function currentMealStatus(state: MealStateV2, today: string): MealStatus {
+  const periods = buildMealTimeline(state, today);
+  const period = periods[periods.length - 1];
+  if (!period) {
+    const rates = deriveRates(state.settings);
+    return {
+      mode: 'normal',
+      balance: 0,
+      dailyAllowance: rates.dailyNormal,
+      freeRemaining: rates.freeAllowance,
+      distanceToMinimum: rates.freeAllowance,
+      freeAllowance: rates.freeAllowance,
+      dailyNormal: rates.dailyNormal,
+      dailyMinimum: rates.dailyMinimum,
+      startDate: state.settings.startDate,
+      endDate: today,
+      hasRecordToday: Boolean(state.records[today]),
+      todayRecord: state.records[today],
+    };
+  }
+
+  const mode: MealMode = period.switchDate ? 'minimum' : 'normal';
+  const balance = period.endingBalance;
+  return {
+    mode,
+    balance,
+    dailyAllowance: mode === 'normal' ? period.restore.dailyNormal : period.restore.dailyMinimum,
+    freeRemaining: mode === 'normal'
+      ? Math.max(0, period.restore.freeAllowance - Math.max(0, -balance))
+      : 0,
+    distanceToMinimum: mode === 'normal' ? period.restore.freeAllowance + balance : 0,
+    freeAllowance: period.restore.freeAllowance,
+    dailyNormal: period.restore.dailyNormal,
+    dailyMinimum: period.restore.dailyMinimum,
+    startDate: period.startDate,
+    endDate: period.endDate,
+    switchDate: period.switchDate,
+    hasRecordToday: Boolean(state.records[today]),
+    todayRecord: state.records[today],
+  };
+}
