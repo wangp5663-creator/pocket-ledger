@@ -1,38 +1,61 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { todayKey } from '../../domain/dates';
-import { centsToYuan, parseYuanToCents } from '../../domain/money';
+import { formatDisplayDate, todayKey } from '../../domain/dates';
+import { currentMealStatus, deriveRates } from '../../domain/mealV2';
+import { centsToYuan, formatYuan, parseYuanToCents } from '../../domain/money';
 import { useMeal } from '../../state/MealStore';
 import { usePlanning } from '../../state/PlanningStore';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MoneyInput } from '../components/MoneyInput';
 
 export function SettingsPage() {
-  const { state, updateSettings, clearRecords } = useMeal();
+  const { state, updateSettings, restoreNow, clearRecords } = useMeal();
   const { clearAll } = usePlanning();
-  const [allowance, setAllowance] = useState(centsToYuan(state.settings.dailyAllowance));
-  const [startDate, setStartDate] = useState(state.settings.startDate);
+  const today = todayKey();
+  const status = currentMealStatus(state, today);
+  const rates = deriveRates(state.settings);
+
+  const [budget, setBudget] = useState(centsToYuan(state.settings.monthlyBudget));
+  const [minimum, setMinimum] = useState(centsToYuan(state.settings.monthlyMinimum));
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [clearMealOpen, setClearMealOpen] = useState(false);
   const [clearPlanOpen, setClearPlanOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const alreadyRestoredToday = state.restores.some((restore) => restore.date === today);
 
   const save = (event: FormEvent) => {
     event.preventDefault();
-    const cents = parseYuanToCents(allowance);
-    if (cents === null || cents <= 0) {
-      setError('每日餐补必须是大于 0 的有效金额');
+    const budgetCents = parseYuanToCents(budget);
+    const minimumCents = parseYuanToCents(minimum);
+    if (budgetCents === null || minimumCents === null) {
+      setError('请输入有效金额');
       setMessage('');
       return;
     }
-    const result = updateSettings({ dailyAllowance: cents, startDate });
+    const result = updateSettings({
+      monthlyBudget: budgetCents,
+      monthlyMinimum: minimumCents,
+      startDate: state.settings.startDate,
+    });
     if (result) {
       setError(result);
       setMessage('');
       return;
     }
     setError('');
-    setMessage('设置已保存');
+    setMessage('设置已保存，下次恢复时生效');
+  };
+
+  const manualRestore = () => {
+    const result = restoreNow();
+    if (result) {
+      setError(result);
+      setMessage('');
+      return;
+    }
+    setError('');
+    setMessage('已恢复 20 元额度');
   };
 
   return (
@@ -43,28 +66,40 @@ export function SettingsPage() {
         <h2 className="card-title">餐补设置</h2>
         <form className="form" onSubmit={save}>
           <label className="field">
-            <span>每日餐补</span>
-            <MoneyInput value={allowance} onChange={setAllowance} ariaLabel="每日餐补金额" />
+            <span>月度餐补预算</span>
+            <MoneyInput value={budget} onChange={setBudget} ariaLabel="月度餐补预算" />
           </label>
           <label className="field">
-            <span>起始日期（只能提前）</span>
-            <input
-              type="date"
-              value={startDate}
-              max={todayKey()}
-              onChange={(event) => setStartDate(event.target.value)}
-            />
+            <span>月度保底</span>
+            <MoneyInput value={minimum} onChange={setMinimum} ariaLabel="月度保底" />
           </label>
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
+          <p className="muted">
+            自由额度 {formatYuan(rates.freeAllowance)} · 日均 {formatYuan(rates.dailyNormal)} / {formatYuan(rates.dailyMinimum)}
+          </p>
+          <p className="muted">起始日期 {state.settings.startDate ? formatDisplayDate(state.settings.startDate) : '未设置'}</p>
+          {error && <p className="form-error" role="alert">{error}</p>}
           {message && <p className="positive">{message}</p>}
-          <button className="button button--primary" type="submit">
-            保存设置
-          </button>
+          <button className="button button--primary" type="submit">保存设置</button>
         </form>
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">当前周期</h2>
+        <div className="summary-grid">
+          <div><span className="muted">开始日期</span><strong>{formatDisplayDate(status.startDate)}</strong></div>
+          <div><span className="muted">开始额度</span><strong>{formatYuan(status.dailyNormal)}/天</strong></div>
+          <div><span className="muted">当前阶段</span><strong>{status.switchDate ? '保底 15 元' : '正常 20 元'}</strong></div>
+          <div><span className="muted">自由额度</span><strong>{status.mode === 'normal' ? formatYuan(status.freeRemaining) : '无'}</strong></div>
+        </div>
+        <button
+          type="button"
+          className="button button--secondary"
+          disabled={alreadyRestoredToday}
+          onClick={() => setRestoreOpen(true)}
+        >
+          {alreadyRestoredToday ? '今天已经恢复过' : '立即恢复 20 元额度'}
+        </button>
+        <p className="muted">恢复后：负数清零、正数带入；手动恢复每天最多一次。</p>
       </section>
 
       <section className="card">
@@ -80,20 +115,32 @@ export function SettingsPage() {
 
       <section className="card">
         <h2 className="card-title">关于</h2>
-        <p className="muted">小账本 v0.1.0 · PWA · 本地存储</p>
+        <p className="muted">小账本 v0.2.0 · PWA · 数据版本 v2</p>
       </section>
+
+      {restoreOpen && (
+        <ConfirmDialog
+          open
+          title="立即恢复 20 元额度？"
+          message="负数将清零、正数将带入新周期；手动恢复每天最多一次。"
+          confirmLabel="确认恢复"
+          onCancel={() => setRestoreOpen(false)}
+          onConfirm={() => {
+            setRestoreOpen(false);
+            manualRestore();
+          }}
+        />
+      )}
 
       {clearMealOpen && (
         <ConfirmDialog
           open
           title="清空餐补数据？"
-          message="将删除所有餐补记录，并把起始日期重置为今天；每日餐补金额保留。"
+          message="将删除所有餐补记录与周期，并把起始日期重置为今天；预算和保底保留。"
           confirmLabel="确认清空"
           onCancel={() => setClearMealOpen(false)}
           onConfirm={() => {
             clearRecords();
-            setStartDate(todayKey());
-            setError('');
             setClearMealOpen(false);
             setMessage('餐补数据已清空');
           }}
@@ -110,7 +157,6 @@ export function SettingsPage() {
           onConfirm={() => {
             clearAll();
             setClearPlanOpen(false);
-            setError('');
             setMessage('规划账数据已清空');
           }}
         />
