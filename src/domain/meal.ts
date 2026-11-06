@@ -77,7 +77,7 @@ export function mealMonthSummary(state: MealState, month: string, today: string)
   const allowanceTotal = monthRecords.reduce((total, record) => total + record.allowance, 0);
   const spentTotal = monthRecords.reduce((total, record) => total + record.spent, 0);
   const endBalance = Object.entries(state.records)
-    .filter(([date]) => date <= endDate)
+    .filter(([date]) => date >= state.settings.startDate && date <= endDate)
     .reduce((total, [, record]) => total + dailyBalance(record), 0);
   return {
     month,

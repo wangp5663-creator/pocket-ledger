@@ -81,7 +81,7 @@ describe('meal rows', () => {
 describe('meal month summary', () => {
   it('aggregates a month and cumulative end balance', () => {
     const state: MealState = {
-      settings,
+      settings: { dailyAllowance: 2000, startDate: '2026-10-01' },
       records: {
         '2026-10-31': record(1000),
         '2026-11-01': record(1000),
@@ -95,5 +95,16 @@ describe('meal month summary', () => {
     expect(summary.spentTotal).toBe(5000);
     expect(summary.net).toBe(1000);
     expect(summary.endBalance).toBe(2000);
+  });
+
+  it('excludes records before the start date from end balance', () => {
+    const state: MealState = {
+      settings: { dailyAllowance: 2000, startDate: '2026-11-01' },
+      records: {
+        '2026-10-31': record(1000),
+        '2026-11-01': record(1000),
+      },
+    };
+    expect(mealMonthSummary(state, '2026-11', '2026-11-10').endBalance).toBe(1000);
   });
 });
