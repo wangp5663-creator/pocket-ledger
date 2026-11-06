@@ -16,6 +16,15 @@ describe('mealStorage', () => {
   it('rejects invalid shapes', () => {
     expect(isMealState({ settings: { dailyAllowance: 2000 }, records: {} })).toBe(false);
     expect(isMealState({ settings: { dailyAllowance: 2000, startDate: '2026-11-01' }, records: { x: { spent: 1 } } })).toBe(false);
+    expect(
+      isMealState({ settings: { dailyAllowance: 2000.5, startDate: '2026-11-01' }, records: {} }),
+    ).toBe(false);
+    expect(
+      isMealState({
+        settings: { dailyAllowance: 2000, startDate: '2026-11-01' },
+        records: { '2026-11-01': { spent: 1.5, allowance: 2000, updatedAt: 'x' } },
+      }),
+    ).toBe(false);
   });
 
   it('falls back to defaults when storage is empty', () => {

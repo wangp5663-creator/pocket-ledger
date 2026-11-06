@@ -36,6 +36,22 @@ describe('planningStorage', () => {
         inflows: [],
       }),
     ).toBe(false);
+    expect(
+      isPlanningState({
+        events: [],
+        spends: [{ id: 's1', eventId: 'e1', date: '2026-11-01', amount: 1.5, createdAt: 'x' }],
+        replenishes: [],
+        inflows: [],
+      }),
+    ).toBe(false);
+    expect(
+      isPlanningState({
+        events: [],
+        spends: [],
+        replenishes: [],
+        inflows: [{ id: 'i1', date: '2026-11-01', amount: -1, createdAt: 'x' }],
+      }),
+    ).toBe(false);
   });
 
   it('falls back to defaults when storage is empty', () => {

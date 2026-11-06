@@ -5,12 +5,16 @@ import type { LoadResult } from './jsonStorage';
 
 export const PLANNING_STORAGE_KEY = 'planned-ledger.v1';
 
+function isCents(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
 function isEntryBase(entry: unknown): boolean {
   if (!isPlainObject(entry)) return false;
   return (
     typeof entry.id === 'string' &&
     typeof entry.date === 'string' &&
-    typeof entry.amount === 'number' &&
+    isCents(entry.amount) &&
     typeof entry.createdAt === 'string' &&
     (entry.note === undefined || typeof entry.note === 'string')
   );
@@ -32,11 +36,11 @@ export function isPlanningState(value: unknown): value is PlanningState {
       typeof event.id === 'string' &&
       typeof event.name === 'string' &&
       typeof event.createdAt === 'string' &&
-      (event.plannedTotal === undefined || typeof event.plannedTotal === 'number') &&
+      (event.plannedTotal === undefined || isCents(event.plannedTotal)) &&
       (event.note === undefined || typeof event.note === 'string') &&
       Array.isArray(event.replenishPlan) &&
       event.replenishPlan.every(
-        (item) => isPlainObject(item) && typeof item.month === 'string' && typeof item.amount === 'number',
+        (item) => isPlainObject(item) && typeof item.month === 'string' && isCents(item.amount),
       ),
   );
   return (
