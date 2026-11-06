@@ -224,6 +224,29 @@ describe('restore normalization', () => {
   });
 });
 
+describe('restore carry snapshots', () => {
+  it('snapshots positive carry into auto restores', () => {
+    const state: MealStateV2 = {
+      settings,
+      records: { '2026-11-02': { spent: 1000, updatedAt: '2026-11-02T00:00:00.000Z' } },
+      restores: [createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z')],
+    };
+    const next = normalizeMealState(state, '2026-12-10');
+    expect(next.restores.find((event) => event.date === '2026-12-01')?.openingBalance).toBe(1000);
+  });
+
+  it('snapshots positive carry into manual restores', () => {
+    const state: MealStateV2 = {
+      settings,
+      records: { '2026-11-02': { spent: 1000, updatedAt: '2026-11-02T00:00:00.000Z' } },
+      restores: [createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z')],
+    };
+    const result = restoreMealNow(state, '2026-11-10');
+    expect(result.error).toBeUndefined();
+    expect(result.state.restores.find((event) => event.date === '2026-11-10')?.openingBalance).toBe(1000);
+  });
+});
+
 describe('manual restore', () => {
   it('adds a restore for today and rejects a second one', () => {
     const state: MealStateV2 = {

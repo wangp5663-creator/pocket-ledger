@@ -294,7 +294,12 @@ export function normalizeMealState(state: MealStateV2, today: string): MealState
   let cursor = `${addMonths(monthOf(lastDate), 1)}-01`;
   while (cursor <= today) {
     if (!restores.some((event) => event.date === cursor)) {
-      restores.push(createRestoreEvent(state.settings, cursor, `${cursor}T00:00:00`));
+      const carryPeriods = buildMealTimeline(
+        { ...state, restores: [...restores] },
+        addDays(cursor, -1),
+      );
+      const openingBalance = Math.max(0, carryPeriods[carryPeriods.length - 1]?.endingBalance ?? 0);
+      restores.push(createRestoreEvent(state.settings, cursor, `${cursor}T00:00:00`, openingBalance));
     }
     cursor = `${addMonths(monthOf(cursor), 1)}-01`;
   }
@@ -320,7 +325,9 @@ export function restoreMealNow(state: MealStateV2, today: string): RestoreResult
   if (normalized.restores.some((event) => event.date === today)) {
     return { state: normalized, error: '今天已经恢复过' };
   }
-  const event = createRestoreEvent(normalized.settings, today, new Date().toISOString());
+  const carryPeriods = buildMealTimeline(normalized, addDays(today, -1));
+  const openingBalance = Math.max(0, carryPeriods[carryPeriods.length - 1]?.endingBalance ?? 0);
+  const event = createRestoreEvent(normalized.settings, today, new Date().toISOString(), openingBalance);
   const restores = [...normalized.restores, event].sort((a, b) => a.date.localeCompare(b.date));
   return { state: { ...normalized, restores } };
 }
