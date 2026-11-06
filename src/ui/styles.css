@@ -333,9 +333,9 @@ h2 {
   color: var(--muted);
 }
 
-.field input,
-.field select,
-.field textarea {
+.field > input,
+.field > select,
+.field > textarea {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
@@ -346,9 +346,9 @@ h2 {
   outline: none;
 }
 
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
+.field > input:focus,
+.field > select:focus,
+.field > textarea:focus {
   border-color: var(--meal-primary);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
@@ -1090,4 +1090,62 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.period-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.period-calendar__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.period-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.period-calendar__weekday {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 0;
+}
+
+.period-calendar__day {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  min-height: 40px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.period-calendar__day:hover:not(:disabled) {
+  background: var(--surface-soft);
+}
+
+.period-calendar__day.is-in-range {
+  background: var(--badge-success-bg);
+}
+
+.period-calendar__day.is-selected {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  font-weight: 600;
+}
+
+.period-calendar__day.is-today {
+  outline: 1px solid var(--meal-primary);
+}
+
+.period-calendar__day:disabled {
+  color: var(--border);
+  cursor: default;
 }

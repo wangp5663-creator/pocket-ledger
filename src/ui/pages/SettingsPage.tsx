@@ -1,22 +1,28 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { formatDisplayDate, todayKey } from '../../domain/dates';
-import { currentMealStatus, deriveRates } from '../../domain/mealV2';
+import { buildMealTimeline, currentMealStatus, deriveRates } from '../../domain/mealV2';
 import { centsToYuan, formatYuan, parseYuanToCents } from '../../domain/money';
 import { useMeal } from '../../state/MealStore';
 import { usePlanning } from '../../state/PlanningStore';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MoneyInput } from '../components/MoneyInput';
+import { PeriodCalendar } from '../components/PeriodCalendar';
+import { Sheet } from '../components/Sheet';
 
 export function SettingsPage() {
-  const { state, updateSettings, restoreNow, clearRecords } = useMeal();
+  const { state, updateSettings, restoreNow, customizePeriod, clearRecords } = useMeal();
   const { clearAll } = usePlanning();
   const today = todayKey();
   const status = currentMealStatus(state, today);
-  const rates = deriveRates(state.settings);
+  const rates = deriveRates(state.settings, status.startDate || today);
+  const futurePeriods = buildMealTimeline(state, today).filter((period) => period.startDate > today);
 
   const [budget, setBudget] = useState(centsToYuan(state.settings.monthlyBudget));
   const [minimum, setMinimum] = useState(centsToYuan(state.settings.monthlyMinimum));
+  const [cycleStartDay, setCycleStartDay] = useState(String(state.settings.cycleStartDay ?? 1));
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarError, setCalendarError] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [clearMealOpen, setClearMealOpen] = useState(false);
@@ -28,8 +34,14 @@ export function SettingsPage() {
     event.preventDefault();
     const budgetCents = parseYuanToCents(budget);
     const minimumCents = parseYuanToCents(minimum);
+    const cycleDay = Number(cycleStartDay);
     if (budgetCents === null || minimumCents === null) {
       setError('请输入有效金额');
+      setMessage('');
+      return;
+    }
+    if (!Number.isInteger(cycleDay) || cycleDay < 1 || cycleDay > 31) {
+      setError('周期起始日必须是 1-31');
       setMessage('');
       return;
     }
@@ -37,6 +49,7 @@ export function SettingsPage() {
       monthlyBudget: budgetCents,
       monthlyMinimum: minimumCents,
       startDate: state.settings.startDate,
+      cycleStartDay: cycleDay,
     });
     if (result) {
       setError(result);
@@ -73,9 +86,21 @@ export function SettingsPage() {
             <span>月度保底</span>
             <MoneyInput value={minimum} onChange={setMinimum} ariaLabel="月度保底" />
           </label>
+          <label className="field">
+            <span>周期起始日（每月几号开始）</span>
+            <input
+              type="number"
+              min={1}
+              max={31}
+              value={cycleStartDay}
+              onChange={(event) => setCycleStartDay(event.target.value)}
+              aria-label="周期起始日"
+            />
+          </label>
           <p className="muted">
-            自由额度 {formatYuan(rates.freeAllowance)} · 日均正常 {formatYuan(rates.dailyNormal)} / 日均保底 {formatYuan(rates.dailyMinimum)}
+            整月自由额度 {formatYuan(rates.freeAllowance)} · 日均正常 {formatYuan(rates.dailyNormal)} / 日均保底 {formatYuan(rates.dailyMinimum)}
           </p>
+          <p className="muted">周期默认从每月起始日到下个月起始日前一天；修改后下次恢复生效。</p>
           <p className="muted">起始日期 {state.settings.startDate ? formatDisplayDate(state.settings.startDate) : '未设置'}</p>
           {error && <p className="form-error" role="alert">{error}</p>}
           {message && <p className="positive" role="status" aria-live="polite">{message}</p>}
@@ -87,6 +112,7 @@ export function SettingsPage() {
         <h2 className="card-title">当前周期</h2>
         <div className="summary-grid">
           <div><span className="muted">开始日期</span><strong>{formatDisplayDate(status.startDate)}</strong></div>
+          <div><span className="muted">结束日期</span><strong>{formatDisplayDate(status.endDate)}</strong></div>
           <div><span className="muted">开始额度</span><strong>{formatYuan(status.dailyNormal)}/天</strong></div>
           <div><span className="muted">当前阶段</span><strong>{status.switchDate ? `保底 ${formatYuan(status.dailyMinimum)}` : `正常 ${formatYuan(status.dailyNormal)}`}</strong></div>
           <div><span className="muted">自由额度</span><strong>{status.mode === 'normal' ? formatYuan(status.freeRemaining) : '无'}</strong></div>
@@ -99,8 +125,57 @@ export function SettingsPage() {
         >
           {alreadyRestoredToday ? '今天已经恢复过' : '立即恢复正常额度'}
         </button>
+        <button
+          type="button"
+          className="button button--secondary"
+          onClick={() => {
+            setCalendarError('');
+            setCalendarOpen(true);
+          }}
+        >
+          自定义当前 / 未来周期
+        </button>
         <p className="muted">恢复后：负数清零、正数带入；手动恢复每天最多一次。</p>
       </section>
+
+      {calendarOpen && (
+        <Sheet open title="自定义周期" onClose={() => setCalendarOpen(false)}>
+          {calendarError && (
+            <p className="form-error" role="alert">
+              {calendarError}
+            </p>
+          )}
+          <PeriodCalendar
+            initialStart={status.startDate}
+            initialEnd={status.endDate}
+            minDate={state.settings.startDate}
+            today={today}
+            onCancel={() => setCalendarOpen(false)}
+            onConfirm={(startDate, endDate) => {
+              const result = customizePeriod(startDate, endDate);
+              if (result) {
+                setCalendarError(result);
+                return;
+              }
+              setCalendarError('');
+              setError('');
+              setMessage('周期已更新');
+              setCalendarOpen(false);
+            }}
+          />
+        </Sheet>
+      )}
+
+      {futurePeriods.length > 0 && (
+        <section className="card">
+          <h2 className="card-title">未来周期</h2>
+          {futurePeriods.map((period) => (
+            <div className="period-meta" key={period.restore.id}>
+              {formatDisplayDate(period.startDate)} – {formatDisplayDate(period.endDate)} · {formatYuan(period.restore.dailyNormal)}/天
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="card">
         <h2 className="card-title">数据</h2>

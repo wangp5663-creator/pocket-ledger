@@ -1,4 +1,12 @@
-import { addDays, addMonths, listDates, monthOf } from './dates';
+import {
+  addDays,
+  addMonths,
+  daysInMonth,
+  isValidDateKey,
+  listDates,
+  monthOf,
+  todayKey,
+} from './dates';
 import { createId } from './id';
 
 export type MealMode = 'normal' | 'minimum';
@@ -7,6 +15,7 @@ export interface MealSettingsV2 {
   monthlyBudget: number;
   monthlyMinimum: number;
   startDate: string;
+  cycleStartDay?: number;
 }
 
 export interface MealRecordV2 {
@@ -25,6 +34,7 @@ export interface RestoreEvent {
   freeAllowance: number;
   dailyNormal: number;
   dailyMinimum: number;
+  cycleStartDay?: number;
   note?: string;
 }
 
@@ -42,17 +52,23 @@ export interface DerivedRates {
 
 export function defaultMealStateV2(): MealStateV2 {
   return {
-    settings: { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: '' },
+    settings: { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: '', cycleStartDay: 1 },
     records: {},
     restores: [],
   };
 }
 
-export function deriveRates(settings: MealSettingsV2): DerivedRates {
+export function deriveRates(
+  settings: MealSettingsV2,
+  date: string = settings.startDate || todayKey(),
+): DerivedRates {
+  const days = daysInMonth(monthOf(date));
+  const dailyNormal = Math.round(settings.monthlyBudget / days);
+  const dailyMinimum = Math.round(settings.monthlyMinimum / days);
   return {
-    dailyNormal: Math.round(settings.monthlyBudget / 30),
-    dailyMinimum: Math.round(settings.monthlyMinimum / 30),
-    freeAllowance: settings.monthlyBudget - settings.monthlyMinimum,
+    dailyNormal,
+    dailyMinimum,
+    freeAllowance: Math.max(0, (dailyNormal - dailyMinimum) * days),
   };
 }
 
@@ -67,6 +83,12 @@ export function validateMealSettings(settings: MealSettingsV2): string | null {
     return '月度保底必须小于月度预算';
   }
   if (!settings.startDate) return '请选择起始日期';
+  if (
+    settings.cycleStartDay !== undefined &&
+    (!Number.isInteger(settings.cycleStartDay) || settings.cycleStartDay < 1 || settings.cycleStartDay > 31)
+  ) {
+    return '周期起始日必须是 1-31';
+  }
   return null;
 }
 
@@ -76,7 +98,7 @@ export function createRestoreEvent(
   at: string,
   openingBalance = 0,
 ): RestoreEvent {
-  const rates = deriveRates(settings);
+  const rates = deriveRates(settings, date);
   return {
     id: createId(),
     date,
@@ -87,7 +109,23 @@ export function createRestoreEvent(
     freeAllowance: rates.freeAllowance,
     dailyNormal: rates.dailyNormal,
     dailyMinimum: rates.dailyMinimum,
+    cycleStartDay: settings.cycleStartDay ?? 1,
   };
+}
+
+export function cycleStartKey(month: string, cycleStartDay = 1): string {
+  const maxDay = daysInMonth(month);
+  const day = Math.min(Math.max(Math.round(cycleStartDay), 1), maxDay);
+  return `${month}-${String(day).padStart(2, '0')}`;
+}
+
+export function nextCycleStartAfter(dateKey: string, cycleStartDay = 1): string {
+  const currentMonth = monthOf(dateKey);
+  let candidate = cycleStartKey(currentMonth, cycleStartDay);
+  if (candidate <= dateKey) {
+    candidate = cycleStartKey(addMonths(currentMonth, 1), cycleStartDay);
+  }
+  return candidate;
 }
 
 export function missingMealDates(state: MealStateV2, today: string): string[] {
@@ -142,6 +180,7 @@ export interface MealPeriod {
   days: MealDay[];
   totalSpent: number;
   totalAllowance: number;
+  freeAllowance: number;
 }
 
 export interface MealStatus {
@@ -171,8 +210,15 @@ export function buildMealTimeline(state: MealStateV2, today: string): MealPeriod
     const restore = restores[index];
     const next = restores[index + 1];
     const startDate = restore.date;
-    const endDate = next ? addDays(next.date, -1) : today;
+    const cycleStartDay = restore.cycleStartDay ?? state.settings.cycleStartDay ?? 1;
+    const plannedEndDate = next
+      ? addDays(next.date, -1)
+      : addDays(nextCycleStartAfter(restore.date, cycleStartDay), -1);
+    const endDate = plannedEndDate >= startDate ? plannedEndDate : today;
     if (!endDate || endDate < startDate) continue;
+
+    const periodDays = listDates(startDate, endDate).length;
+    const periodFree = Math.max(0, (restore.dailyNormal - restore.dailyMinimum) * periodDays);
 
     let balance = index === 0 ? 0 : previousEnd;
     const openingBalance = balance;
@@ -195,12 +241,12 @@ export function buildMealTimeline(state: MealStateV2, today: string): MealPeriod
       totalAllowance += allowance;
 
       let switchedToMinimum = false;
-      if (mode === 'normal' && balance <= -restore.freeAllowance) {
+      if (mode === 'normal' && balance <= -periodFree) {
         switchedToMinimum = true;
         mode = 'minimum';
         switchDate = date;
-        balance += restore.freeAllowance;
-        totalAllowance += restore.freeAllowance;
+        balance += periodFree;
+        totalAllowance += periodFree;
       }
 
       days.push({
@@ -227,6 +273,7 @@ export function buildMealTimeline(state: MealStateV2, today: string): MealPeriod
       days,
       totalSpent,
       totalAllowance,
+      freeAllowance: periodFree,
     });
     previousEnd = Math.max(0, endingBalance);
   }
@@ -236,9 +283,10 @@ export function buildMealTimeline(state: MealStateV2, today: string): MealPeriod
 
 export function currentMealStatus(state: MealStateV2, today: string): MealStatus {
   const periods = buildMealTimeline(state, today);
-  const period = periods[periods.length - 1];
+  const currentPeriods = periods.filter((period) => period.startDate <= today);
+  const period = currentPeriods[currentPeriods.length - 1];
   if (!period) {
-    const rates = deriveRates(state.settings);
+    const rates = deriveRates(state.settings, state.settings.startDate || today);
     return {
       mode: 'normal',
       balance: 0,
@@ -262,10 +310,10 @@ export function currentMealStatus(state: MealStateV2, today: string): MealStatus
     balance,
     dailyAllowance: mode === 'normal' ? period.restore.dailyNormal : period.restore.dailyMinimum,
     freeRemaining: mode === 'normal'
-      ? Math.max(0, period.restore.freeAllowance - Math.max(0, -balance))
+      ? Math.max(0, period.freeAllowance - Math.max(0, -balance))
       : 0,
-    distanceToMinimum: mode === 'normal' ? period.restore.freeAllowance + balance : 0,
-    freeAllowance: period.restore.freeAllowance,
+    distanceToMinimum: mode === 'normal' ? period.freeAllowance + balance : 0,
+    freeAllowance: period.freeAllowance,
     dailyNormal: period.restore.dailyNormal,
     dailyMinimum: period.restore.dailyMinimum,
     startDate: period.startDate,
@@ -290,8 +338,9 @@ export function normalizeMealState(state: MealStateV2, today: string): MealState
     );
   }
 
+  const cycleStartDay = state.settings.cycleStartDay ?? 1;
   const lastDate = restores[restores.length - 1].date;
-  let cursor = `${addMonths(monthOf(lastDate), 1)}-01`;
+  let cursor = nextCycleStartAfter(lastDate, cycleStartDay);
   while (cursor <= today) {
     if (!restores.some((event) => event.date === cursor)) {
       const carryPeriods = buildMealTimeline(
@@ -301,7 +350,7 @@ export function normalizeMealState(state: MealStateV2, today: string): MealState
       const openingBalance = Math.max(0, carryPeriods[carryPeriods.length - 1]?.endingBalance ?? 0);
       restores.push(createRestoreEvent(state.settings, cursor, `${cursor}T00:00:00`, openingBalance));
     }
-    cursor = `${addMonths(monthOf(cursor), 1)}-01`;
+    cursor = nextCycleStartAfter(cursor, cycleStartDay);
   }
 
   restores.sort((a, b) => a.date.localeCompare(b.date));
@@ -330,4 +379,66 @@ export function restoreMealNow(state: MealStateV2, today: string): RestoreResult
   const event = createRestoreEvent(normalized.settings, today, new Date().toISOString(), openingBalance);
   const restores = [...normalized.restores, event].sort((a, b) => a.date.localeCompare(b.date));
   return { state: { ...normalized, restores } };
+}
+
+export function customizePeriod(
+  state: MealStateV2,
+  today: string,
+  startDate: string,
+  endDate: string,
+): RestoreResult {
+  const normalized = normalizeMealState(state, today);
+  if (!isValidDateKey(startDate) || !isValidDateKey(endDate)) {
+    return { state: normalized, error: '请选择有效日期' };
+  }
+  if (startDate > endDate) {
+    return { state: normalized, error: '开始日期不能晚于结束日期' };
+  }
+  if (startDate < normalized.settings.startDate) {
+    return { state: normalized, error: '不能早于起始日期' };
+  }
+  if (startDate <= today && endDate < today) {
+    return { state: normalized, error: '当前周期必须包含今天' };
+  }
+
+  const restores = [...normalized.restores].sort((a, b) => a.date.localeCompare(b.date));
+  if (restores.length === 0) {
+    return { state: normalized, error: '还没有周期' };
+  }
+
+  const now = new Date().toISOString();
+  const nextStart = addDays(endDate, 1);
+  let nextRestores: RestoreEvent[];
+
+  if (startDate <= today) {
+    const currentIndex = restores.reduce(
+      (found, event, index) => (event.date <= today ? index : found),
+      -1,
+    );
+    if (currentIndex < 0) {
+      return { state: normalized, error: '还没有当前周期' };
+    }
+    const anchor = restores[currentIndex];
+    const previous = restores[currentIndex - 1];
+    if (previous && startDate <= previous.date) {
+      return { state: normalized, error: '开始日期不能早于上一周期' };
+    }
+
+    nextRestores = restores.slice(0, currentIndex);
+    if (startDate > anchor.date) {
+      nextRestores.push(anchor);
+    }
+    nextRestores.push(createRestoreEvent(normalized.settings, startDate, now));
+  } else {
+    nextRestores = restores.filter((event) => event.date < startDate);
+    if (nextRestores.length === 0) {
+      return { state: normalized, error: '开始日期不能早于起始日期' };
+    }
+    nextRestores.push(createRestoreEvent(normalized.settings, startDate, now));
+  }
+
+  nextRestores.push(createRestoreEvent(normalized.settings, nextStart, now));
+  nextRestores.sort((a, b) => a.date.localeCompare(b.date));
+
+  return { state: { ...normalized, restores: nextRestores } };
 }

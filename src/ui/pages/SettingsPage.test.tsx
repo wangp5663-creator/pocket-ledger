@@ -61,4 +61,24 @@ describe('SettingsPage v2', () => {
     await user.click(screen.getByRole('button', { name: '保存设置' }));
     expect(screen.getByRole('alert')).toHaveTextContent('月度保底必须小于月度预算');
   });
+
+  it('saves the cycle start day', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettingsPage />, { meal: mealFixture() });
+    const cycleDay = screen.getByLabelText('周期起始日');
+    await user.clear(cycleDay);
+    await user.type(cycleDay, '15');
+    await user.click(screen.getByRole('button', { name: '保存设置' }));
+
+    const saved = JSON.parse(localStorage.getItem(MEAL_V2_STORAGE_KEY) ?? '{}');
+    expect(saved.settings.cycleStartDay).toBe(15);
+  });
+
+  it('opens the custom period calendar', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettingsPage />, { meal: mealFixture() });
+    await user.click(screen.getByRole('button', { name: '自定义当前 / 未来周期' }));
+    expect(screen.getByRole('dialog', { name: '自定义周期' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '保存周期' })).toBeInTheDocument();
+  });
 });

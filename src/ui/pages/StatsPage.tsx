@@ -21,7 +21,7 @@ export function StatsPage() {
   const [ledger, setLedger] = useState<Ledger>('meal');
   const [count, setCount] = useState(6);
   const today = todayKey();
-  const periods = buildMealTimeline(mealState, today);
+  const periods = buildMealTimeline(mealState, today).filter((period) => period.startDate <= today);
   const displayPeriods = [...periods].reverse();
   const planningRows = planningMonthlySeries(planningState, today, count);
   const planningDisplay = [...planningRows].reverse();
@@ -68,7 +68,9 @@ export function StatsPage() {
                   <div className="period-stat" key={period.restore.id}>
                     <div className="period-stat__head">
                       <strong>{formatDisplayDate(period.startDate)} – {formatDisplayDate(period.endDate)}</strong>
-                      {period.endDate === today && <span className="mode-badge">进行中</span>}
+                      {period.startDate <= today && period.endDate >= today && (
+                        <span className="mode-badge">进行中</span>
+                      )}
                     </div>
                     <div className="period-stat__grid">
                       <div><span className="muted">开始额度</span><strong>{formatYuan(period.restore.dailyNormal)}</strong></div>

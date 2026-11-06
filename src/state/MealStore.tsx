@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { todayKey } from '../domain/dates';
 import {
   createRestoreEvent,
+  customizePeriod as customizeMealPeriod,
   normalizeMealState,
   removeMealRecord,
   restoreMealNow,
@@ -20,6 +21,7 @@ interface MealContextValue {
   saveRecord: (date: string, spent: number, note: string) => void;
   deleteRecord: (date: string) => void;
   restoreNow: () => string | null;
+  customizePeriod: (startDate: string, endDate: string) => string | null;
   clearRecords: () => void;
 }
 
@@ -27,12 +29,10 @@ const MealContext = createContext<MealContextValue | null>(null);
 
 export function MealProvider({ children }: { children: ReactNode }) {
   const [initial] = useState(() => loadMealStateV2());
-  const [state, setState] = useState<MealStateV2>(initial.value);
+  const [state, setState] = useState<MealStateV2>(() =>
+    normalizeMealState(initial.value, todayKey()),
+  );
   const [storageError, setStorageError] = useState<string | null>(initial.error ?? null);
-
-  useEffect(() => {
-    setState((previous) => normalizeMealState(previous, todayKey()));
-  }, []);
 
   useEffect(() => {
     const error = saveMealStateV2(state);
@@ -80,6 +80,16 @@ export function MealProvider({ children }: { children: ReactNode }) {
     return null;
   }, [state]);
 
+  const customizePeriod = useCallback(
+    (startDate: string, endDate: string): string | null => {
+      const result = customizeMealPeriod(state, todayKey(), startDate, endDate);
+      if (result.error) return result.error;
+      setState(result.state);
+      return null;
+    },
+    [state],
+  );
+
   const clearRecords = useCallback(() => {
     setState((previous) => {
       const settings = { ...previous.settings, startDate: todayKey() };
@@ -100,9 +110,20 @@ export function MealProvider({ children }: { children: ReactNode }) {
       saveRecord,
       deleteRecord,
       restoreNow,
+      customizePeriod,
       clearRecords,
     }),
-    [state, storageError, dismissError, updateSettings, saveRecord, deleteRecord, restoreNow, clearRecords],
+    [
+      state,
+      storageError,
+      dismissError,
+      updateSettings,
+      saveRecord,
+      deleteRecord,
+      restoreNow,
+      customizePeriod,
+      clearRecords,
+    ],
   );
 
   return <MealContext.Provider value={value}>{children}</MealContext.Provider>;

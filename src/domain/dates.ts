@@ -40,6 +40,10 @@ export function monthEndKey(month: string): string {
   return formatDateKey(new Date(year, monthNumber, 0));
 }
 
+export function daysInMonth(month: string): number {
+  return Number(monthEndKey(month).slice(8));
+}
+
 export function addMonths(month: string, delta: number): string {
   const [year, monthNumber] = month.split('-').map(Number);
   const date = new Date(year, monthNumber - 1 + delta, 1);

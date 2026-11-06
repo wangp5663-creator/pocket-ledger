@@ -67,6 +67,7 @@ describe('mealV2Storage', () => {
       monthlyBudget: 60000,
       monthlyMinimum: 45000,
       startDate: '',
+      cycleStartDay: 1,
     });
   });
 });

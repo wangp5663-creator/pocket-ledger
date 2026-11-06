@@ -10,14 +10,17 @@ export function Onboarding() {
   const { updateSettings } = useMeal();
   const [budget, setBudget] = useState('600');
   const [minimum, setMinimum] = useState('450');
-  const [startDate, setStartDate] = useState(todayKey());
+  const [startDate, setStartDate] = useState(`${todayKey().slice(0, 7)}-01`);
   const [error, setError] = useState('');
 
   const budgetCents = parseYuanToCents(budget);
   const minimumCents = parseYuanToCents(minimum);
   const valid = budgetCents !== null && minimumCents !== null && budgetCents > minimumCents;
   const rates = valid
-    ? deriveRates({ monthlyBudget: budgetCents, monthlyMinimum: minimumCents, startDate })
+    ? deriveRates(
+        { monthlyBudget: budgetCents, monthlyMinimum: minimumCents, startDate, cycleStartDay: 1 },
+        startDate,
+      )
     : null;
 
   const submit = (event: FormEvent) => {
@@ -34,6 +37,7 @@ export function Onboarding() {
       monthlyBudget: budgetCents,
       monthlyMinimum: minimumCents,
       startDate,
+      cycleStartDay: 1,
     });
     if (message) {
       setError(message);

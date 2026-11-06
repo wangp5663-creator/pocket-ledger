@@ -95,7 +95,7 @@ export function MealPage() {
   const today = todayKey();
   const status = currentMealStatus(state, today);
   const timeline = buildMealTimeline(state, today);
-  const periods = [...timeline].reverse();
+  const periods = [...timeline].filter((period) => period.startDate <= today).reverse();
   const missing = missingMealDates(state, today);
   const todayRecord = state.records[today];
   const recordedDays = timeline.reduce((total, period) => total + period.days.length, 0);

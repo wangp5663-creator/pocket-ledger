@@ -3,6 +3,7 @@ import {
   buildMealTimeline,
   createRestoreEvent,
   currentMealStatus,
+  customizePeriod,
   defaultMealStateV2,
   deriveRates,
   missingMealDates,
@@ -25,9 +26,18 @@ describe('rates and defaults', () => {
     });
   });
 
+  it('uses the actual days in the month', () => {
+    const august = { ...settings, startDate: '2026-08-01' };
+    expect(deriveRates(august, '2026-08-01')).toEqual({
+      dailyNormal: 1935,
+      dailyMinimum: 1452,
+      freeAllowance: 14973,
+    });
+  });
+
   it('defaults to 600 / 450 / empty start date', () => {
     expect(defaultMealStateV2()).toEqual({
-      settings: { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: '' },
+      settings: { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: '', cycleStartDay: 1 },
       records: {},
       restores: [],
     });
@@ -142,7 +152,7 @@ describe('meal timeline', () => {
     const periods = buildMealTimeline(state, '2026-12-10');
     expect(periods[0].endingBalance).toBe(1000);
     expect(periods[1].openingBalance).toBe(1000);
-    expect(periods[1].endingBalance).toBe(-500);
+    expect(periods[1].endingBalance).toBe(-565); // 1000 + 1935 (31-day Dec) - 3500
   });
 
   it('reports current status and free quota remaining', () => {
@@ -185,7 +195,29 @@ describe('meal timeline', () => {
     const periods = buildMealTimeline(state, '2026-12-10');
     expect(periods[0].endingBalance).toBe(-10000);
     expect(periods[1].openingBalance).toBe(0);
-    expect(periods[1].endingBalance).toBe(1000);
+    expect(periods[1].endingBalance).toBe(935); // 1935 (31-day Dec) - 1000
+  });
+
+  it('plans the current period through the day before the next cycle start', () => {
+    const state: MealStateV2 = {
+      settings,
+      records: {},
+      restores: [createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z')],
+    };
+    const period = buildMealTimeline(state, '2026-11-10')[0];
+    expect(period.endDate).toBe('2026-11-30');
+    expect(period.freeAllowance).toBe(15000);
+  });
+
+  it('fills cycles using the configured cycle start day', () => {
+    const custom = { ...settings, cycleStartDay: 15 };
+    const state: MealStateV2 = { settings: custom, records: {}, restores: [] };
+    const next = normalizeMealState(state, '2026-12-20');
+    expect(next.restores.map((event) => event.date)).toEqual([
+      '2026-11-01',
+      '2026-11-15',
+      '2026-12-15',
+    ]);
   });
 
   it('counts the free allowance in a switched period total allowance', () => {
@@ -221,6 +253,46 @@ describe('restore normalization', () => {
     };
     const next = normalizeMealState(state, '2026-11-20');
     expect(next.restores).toHaveLength(1);
+  });
+});
+
+describe('custom periods', () => {
+  const state: MealStateV2 = {
+    settings,
+    records: {},
+    restores: [createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z')],
+  };
+
+  it('customizes the current period and starts the next day after it', () => {
+    const result = customizePeriod(state, '2026-11-10', '2026-11-05', '2026-11-20');
+    expect(result.error).toBeUndefined();
+    expect(result.state.restores.map((event) => event.date)).toEqual([
+      '2026-11-01',
+      '2026-11-05',
+      '2026-11-21',
+    ]);
+    const status = currentMealStatus(result.state, '2026-11-10');
+    expect(status.startDate).toBe('2026-11-05');
+    expect(status.endDate).toBe('2026-11-20');
+  });
+
+  it('plans a future custom period without changing the current period', () => {
+    const result = customizePeriod(state, '2026-11-10', '2026-11-20', '2026-12-20');
+    expect(result.error).toBeUndefined();
+    expect(result.state.restores.map((event) => event.date)).toEqual([
+      '2026-11-01',
+      '2026-11-20',
+      '2026-12-21',
+    ]);
+    const status = currentMealStatus(result.state, '2026-11-10');
+    expect(status.startDate).toBe('2026-11-01');
+    expect(status.endDate).toBe('2026-11-19');
+  });
+
+  it('rejects a current period that does not contain today', () => {
+    expect(customizePeriod(state, '2026-11-10', '2026-11-01', '2026-11-09').error).toBe(
+      '当前周期必须包含今天',
+    );
   });
 });
 

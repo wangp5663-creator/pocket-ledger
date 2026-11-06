@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addDays,
   addMonths,
+  daysInMonth,
   formatDateKey,
   isValidDateKey,
   isValidMonthKey,
@@ -24,6 +25,12 @@ describe('dates', () => {
     expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
     expect(addMonths('2026-12', 1)).toBe('2027-01');
     expect(monthEndKey('2028-02')).toBe('2028-02-29');
+  });
+
+  it('counts the actual days in a month', () => {
+    expect(daysInMonth('2026-11')).toBe(30);
+    expect(daysInMonth('2026-12')).toBe(31);
+    expect(daysInMonth('2028-02')).toBe(29);
   });
 
   it('lists inclusive dates and month keys', () => {

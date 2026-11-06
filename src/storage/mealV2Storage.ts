@@ -11,6 +11,13 @@ function isCents(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 }
 
+function isCycleDay(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 31)
+  );
+}
+
 function isRestoreEvent(value: unknown): boolean {
   if (!isPlainObject(value)) return false;
   return (
@@ -23,6 +30,7 @@ function isRestoreEvent(value: unknown): boolean {
     isCents(value.freeAllowance) &&
     isCents(value.dailyNormal) &&
     isCents(value.dailyMinimum) &&
+    isCycleDay(value.cycleStartDay) &&
     (value.note === undefined || typeof value.note === 'string')
   );
 }
@@ -30,8 +38,9 @@ function isRestoreEvent(value: unknown): boolean {
 export function isMealStateV2(value: unknown): value is MealStateV2 {
   if (!isPlainObject(value)) return false;
   if (!isPlainObject(value.settings)) return false;
-  const { monthlyBudget, monthlyMinimum, startDate } = value.settings;
+  const { monthlyBudget, monthlyMinimum, startDate, cycleStartDay } = value.settings;
   if (!isCents(monthlyBudget) || !isCents(monthlyMinimum) || typeof startDate !== 'string') return false;
+  if (!isCycleDay(cycleStartDay)) return false;
   if (monthlyBudget <= monthlyMinimum) return false;
   if (!isPlainObject(value.records)) return false;
   const recordsOk = Object.values(value.records).every(
