@@ -28,6 +28,8 @@ describe('dates', () => {
 
   it('lists inclusive dates and month keys', () => {
     expect(listDates('2026-11-01', '2026-11-03')).toEqual(['2026-11-01', '2026-11-02', '2026-11-03']);
+    expect(listDates('2026-11-01', 'abc')).toEqual([]);
+    expect(listDates('2026-11-03', '2026-11-01')).toEqual([]);
     expect(monthOf('2026-11-06')).toBe('2026-11');
   });
 

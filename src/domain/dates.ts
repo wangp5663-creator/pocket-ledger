@@ -21,6 +21,7 @@ export function addDays(key: string, days: number): string {
 }
 
 export function listDates(start: string, end: string): string[] {
+  if (!isValidDateKey(start) || !isValidDateKey(end) || start > end) return [];
   const dates: string[] = [];
   let current = start;
   while (current <= end) {
