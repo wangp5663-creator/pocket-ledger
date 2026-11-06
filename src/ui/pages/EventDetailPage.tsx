@@ -101,10 +101,15 @@ export function EventDetailPage() {
           ‹ 返回规划账
         </Link>
         <div>
-          <button type="button" className="text-button" onClick={() => setEditEventOpen(true)}>
+          <button type="button" className="text-button" aria-label="编辑事项" onClick={() => setEditEventOpen(true)}>
             编辑
           </button>
-          <button type="button" className="text-button text-button--danger" onClick={() => setDeleteEventOpen(true)}>
+          <button
+            type="button"
+            className="text-button text-button--danger"
+            aria-label="删除事项"
+            onClick={() => setDeleteEventOpen(true)}
+          >
             删除
           </button>
         </div>
@@ -113,11 +118,13 @@ export function EventDetailPage() {
       <section className="balance-card balance-card--indigo">
         <span className="balance-card__label">{event.name}</span>
         <strong className="balance-card__amount">
-          {progress.outstanding > 0
-            ? `待补 ${formatYuan(progress.outstanding)}`
-            : progress.outstanding < 0
-              ? `多补 ${formatYuan(-progress.outstanding)}`
-              : '已补齐'}
+          {progress.spent === 0
+            ? '暂无支出'
+            : progress.outstanding > 0
+              ? `待补 ${formatYuan(progress.outstanding)}`
+              : progress.outstanding < 0
+                ? `多补 ${formatYuan(-progress.outstanding)}`
+                : '已补齐'}
         </strong>
         {progress.overPlanned !== undefined && (
           <span className="badge badge--danger">超计划 {formatYuan(progress.overPlanned)}</span>
@@ -172,12 +179,18 @@ export function EventDetailPage() {
                   <p className="muted">当时待补 {formatYuan(item.outstandingAfter)}</p>
                 </div>
                 <div className="timeline__actions">
-                  <button type="button" className="text-button" onClick={() => openEditEntry(item)}>
+                  <button
+                    type="button"
+                    className="text-button"
+                    aria-label={`编辑${item.kind === 'spend' ? '支出' : '补回'} ${formatYuan(item.amount)}`}
+                    onClick={() => openEditEntry(item)}
+                  >
                     编辑
                   </button>
                   <button
                     type="button"
                     className="text-button text-button--danger"
+                    aria-label={`删除${item.kind === 'spend' ? '支出' : '补回'} ${formatYuan(item.amount)}`}
                     onClick={() =>
                       setDeletingEntry({
                         kind: item.kind,

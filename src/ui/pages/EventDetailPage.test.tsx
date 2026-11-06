@@ -39,4 +39,22 @@ describe('EventDetailPage', () => {
     expect(screen.getByText('当时待补 ¥5000.00')).toBeInTheDocument();
     expect(screen.getByText('当时待补 ¥3000.00')).toBeInTheDocument();
   });
+
+  it('shows 暂无支出 for an event without spending', () => {
+    const zero: PlanningState = {
+      events: [planning.events[0]],
+      spends: [],
+      replenishes: [],
+      inflows: [],
+    };
+    renderWithProviders(
+      <Routes>
+        <Route path="/planning/events/:eventId" element={<EventDetailPage />} />
+      </Routes>,
+      { route: '/planning/events/e1', planning: zero },
+    );
+
+    expect(screen.getByText('暂无支出')).toBeInTheDocument();
+    expect(screen.queryByText('已补齐')).not.toBeInTheDocument();
+  });
 });
