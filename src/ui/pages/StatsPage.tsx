@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatDisplayDate, todayKey } from '../../domain/dates';
+import { formatDisplayDate, formatMonthLabel, todayKey } from '../../domain/dates';
 import { buildMealTimeline } from '../../domain/mealV2';
 import { formatSignedYuan, formatYuan } from '../../domain/money';
 import { planningMonthlySeries } from '../../domain/stats';
@@ -32,7 +32,7 @@ export function StatsPage() {
   const chartData =
     ledger === 'meal'
       ? periods.map((period) => ({ label: shortDate(period.startDate), value: period.net }))
-      : planningRows.map((row) => ({ label: row.month, value: row.net }));
+      : planningRows.map((row) => ({ label: String(Number(row.month.slice(5))) + '月', value: row.net }));
 
   const hasData = ledger === 'meal' ? mealHasData : planningHasData;
 
@@ -54,18 +54,25 @@ export function StatsPage() {
         <>
           <section className="card">
             <h2 className="card-title">{ledger === 'meal' ? '每期结余' : '每月净变化'}</h2>
-            <BarChart data={chartData} color={ledger === 'meal' ? 'var(--meal-primary)' : 'var(--planning-primary)'} />
+            <BarChart
+              data={chartData}
+              color={ledger === 'meal' ? 'var(--meal-primary)' : 'var(--planning-primary)'}
+              ariaLabel={ledger === 'meal' ? '餐补周期趋势' : '规划账月度趋势'}
+            />
           </section>
 
           <section className="card table-wrap">
             {ledger === 'meal' ? (
               <div className="table table--stats">
                 <div className="table__row table__head">
-                  <span>周期</span><span>开始额度</span><span>15切换</span><span>花费</span><span>结束</span><span>结转</span>
+                  <span>周期</span><span>开始额度</span><span>15切换</span><span>花费</span><span>结束余额</span><span>结转</span>
                 </div>
                 {displayPeriods.map((period) => (
                   <div className="table__row" key={period.restore.id}>
-                    <span>{formatDisplayDate(period.startDate)}–{formatDisplayDate(period.endDate)}</span>
+                    <span>
+                      {formatDisplayDate(period.startDate)}–{formatDisplayDate(period.endDate)}
+                      {period.endDate === today ? ' · 进行中' : ''}
+                    </span>
                     <span>{formatYuan(period.restore.dailyNormal)}</span>
                     <span>{period.switchDate ? formatDisplayDate(period.switchDate) : '—'}</span>
                     <span>{formatYuan(period.totalSpent)}</span>
@@ -81,7 +88,7 @@ export function StatsPage() {
                 </div>
                 {planningDisplay.map((row) => (
                   <div className="table__row" key={row.month}>
-                    <span>{row.month}</span>
+                    <span>{formatMonthLabel(row.month)}</span>
                     <span>{formatYuan(row.spends)}</span>
                     <span>{formatYuan(row.replenishes)}</span>
                     <span>{formatYuan(row.inflows)}</span>
