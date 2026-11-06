@@ -10,6 +10,14 @@
   --planning-primary: #6366f1;
   --planning-primary-dark: #4f46e5;
   --danger: #e05656;
+  --button-primary-bg: #047857;
+  --button-primary-text: #ffffff;
+  --button-danger-bg: #b91c1c;
+  --button-danger-text: #ffffff;
+  --badge-danger-bg: #fee2e2;
+  --badge-danger-text: #b91c1c;
+  --badge-success-bg: #d1fae5;
+  --badge-success-text: #047857;
   --success: #059669;
   --warning-bg: #fff7e6;
   --warning-text: #b45309;
@@ -30,6 +38,14 @@
     --planning-primary: #818cf8;
     --planning-primary-dark: #6366f1;
     --danger: #f87171;
+    --button-primary-bg: #34d399;
+    --button-primary-text: #0f172a;
+    --button-danger-bg: #f87171;
+    --button-danger-text: #0f172a;
+    --badge-danger-bg: #4c1d1d;
+    --badge-danger-text: #fca5a5;
+    --badge-success-bg: #134e3a;
+    --badge-success-text: #6ee7b7;
     --success: #34d399;
     --warning-bg: #3b2f1b;
     --warning-text: #fbbf24;
@@ -57,9 +73,15 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--meal-primary);
+  outline-offset: 2px;
 }
 
 a {
@@ -142,7 +164,7 @@ h2 {
 .card-title {
   margin: 0;
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .balance-card {
@@ -194,13 +216,13 @@ h2 {
 }
 
 .badge--danger {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--badge-danger-bg);
+  color: var(--badge-danger-text);
 }
 
 .badge--success {
-  background: #d1fae5;
-  color: #047857;
+  background: var(--badge-success-bg);
+  color: var(--badge-success-text);
 }
 
 .summary-grid {
@@ -235,8 +257,8 @@ h2 {
 }
 
 .button--primary {
-  background: var(--meal-primary);
-  color: #fff;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
 }
 
 .button--secondary {
@@ -250,8 +272,8 @@ h2 {
 }
 
 .button--danger {
-  background: var(--danger);
-  color: #fff;
+  background: var(--button-danger-bg);
+  color: var(--button-danger-text);
 }
 
 .text-button {
@@ -270,8 +292,8 @@ h2 {
 .icon-button {
   border: none;
   background: var(--surface-soft);
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   font-size: 18px;
   line-height: 1;
@@ -294,7 +316,8 @@ h2 {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
@@ -306,7 +329,8 @@ h2 {
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   border-color: var(--meal-primary);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
@@ -455,11 +479,6 @@ h2 {
   color: var(--muted);
 }
 
-.event-card__head .badge--success {
-  background: #d1fae5;
-  color: #047857;
-}
-
 .event-card__meta {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
@@ -504,7 +523,7 @@ h2 {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .segmented__item.is-active {
