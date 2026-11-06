@@ -1,86 +1,108 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { todayKey } from '../domain/dates';
-import type { MealSettings, MealState } from '../domain/meal';
-import { loadMealState, saveMealState } from '../storage/mealStorage';
+import {
+  createRestoreEvent,
+  normalizeMealState,
+  removeMealRecord,
+  restoreMealNow,
+  upsertMealRecord,
+  validateMealSettings,
+} from '../domain/mealV2';
+import type { MealSettingsV2, MealStateV2 } from '../domain/mealV2';
+import { loadMealStateV2, saveMealStateV2 } from '../storage/mealV2Storage';
 
 interface MealContextValue {
-  state: MealState;
+  state: MealStateV2;
   storageError: string | null;
   dismissError: () => void;
-  saveRecord: (date: string, spent: number, note: string, allowance: number) => void;
+  updateSettings: (settings: MealSettingsV2) => string | null;
+  saveRecord: (date: string, spent: number, note: string) => void;
   deleteRecord: (date: string) => void;
-  updateSettings: (settings: MealSettings) => string | null;
+  restoreNow: () => string | null;
   clearRecords: () => void;
 }
 
 const MealContext = createContext<MealContextValue | null>(null);
 
 export function MealProvider({ children }: { children: ReactNode }) {
-  const [initial] = useState(() => loadMealState());
-  const [state, setState] = useState<MealState>(initial.value);
+  const [initial] = useState(() => loadMealStateV2());
+  const [state, setState] = useState<MealStateV2>(initial.value);
   const [storageError, setStorageError] = useState<string | null>(initial.error ?? null);
 
   useEffect(() => {
-    const error = saveMealState(state);
+    setState((previous) => normalizeMealState(previous, todayKey()));
+  }, []);
+
+  useEffect(() => {
+    const error = saveMealStateV2(state);
     if (error) setStorageError(error);
   }, [state]);
 
   const dismissError = useCallback(() => setStorageError(null), []);
 
-  const saveRecord = useCallback((date: string, spent: number, note: string, allowance: number) => {
+  const mutate = useCallback((updater: (previous: MealStateV2) => MealStateV2) => {
+    setState((previous) => updater(normalizeMealState(previous, todayKey())));
+  }, []);
+
+  const updateSettings = useCallback((settings: MealSettingsV2): string | null => {
+    const message = validateMealSettings(settings);
+    if (message) return message;
     setState((previous) => {
-      const existing = previous.records[date];
+      const normalized = normalizeMealState(previous, todayKey());
+      const restores =
+        normalized.restores.length > 0
+          ? normalized.restores
+          : [createRestoreEvent(settings, settings.startDate, new Date().toISOString())];
+      return { ...normalized, settings, restores };
+    });
+    return null;
+  }, []);
+
+  const saveRecord = useCallback(
+    (date: string, spent: number, note: string) => {
+      mutate((previous) => upsertMealRecord(previous, date, spent, note, new Date().toISOString()));
+    },
+    [mutate],
+  );
+
+  const deleteRecord = useCallback(
+    (date: string) => {
+      mutate((previous) => removeMealRecord(previous, date));
+    },
+    [mutate],
+  );
+
+  const restoreNow = useCallback((): string | null => {
+    const result = restoreMealNow(state, todayKey());
+    if (result.error) return result.error;
+    setState(result.state);
+    return null;
+  }, [state]);
+
+  const clearRecords = useCallback(() => {
+    setState((previous) => {
+      const settings = { ...previous.settings, startDate: todayKey() };
       return {
-        ...previous,
-        records: {
-          ...previous.records,
-          [date]: {
-            spent,
-            note: note.trim() || undefined,
-            allowance: existing ? existing.allowance : allowance,
-            updatedAt: new Date().toISOString(),
-          },
-        },
+        settings,
+        records: {},
+        restores: [createRestoreEvent(settings, settings.startDate, new Date().toISOString())],
       };
     });
   }, []);
 
-  const deleteRecord = useCallback((date: string) => {
-    setState((previous) => {
-      const records = { ...previous.records };
-      delete records[date];
-      return { ...previous, records };
-    });
-  }, []);
-
-  const updateSettings = useCallback(
-    (settings: MealSettings): string | null => {
-      if (!Number.isInteger(settings.dailyAllowance) || settings.dailyAllowance <= 0) {
-        return '每日餐补必须是大于 0 的金额';
-      }
-      const today = todayKey();
-      if (!settings.startDate) return '请选择起始日期';
-      if (settings.startDate > today) return '起始日期不能晚于今天';
-      const earliest = Object.keys(state.records).sort()[0];
-      if (earliest && settings.startDate > earliest) return '起始日期不能晚于已有记录的最早日期';
-      setState((previous) => ({ ...previous, settings }));
-      return null;
-    },
-    [state.records],
-  );
-
-  const clearRecords = useCallback(() => {
-    setState((previous) => ({
-      ...previous,
-      settings: { ...previous.settings, startDate: todayKey() },
-      records: {},
-    }));
-  }, []);
-
   const value = useMemo(
-    () => ({ state, storageError, dismissError, saveRecord, deleteRecord, updateSettings, clearRecords }),
-    [state, storageError, dismissError, saveRecord, deleteRecord, updateSettings, clearRecords],
+    () => ({
+      state,
+      storageError,
+      dismissError,
+      updateSettings,
+      saveRecord,
+      deleteRecord,
+      restoreNow,
+      clearRecords,
+    }),
+    [state, storageError, dismissError, updateSettings, saveRecord, deleteRecord, restoreNow, clearRecords],
   );
 
   return <MealContext.Provider value={value}>{children}</MealContext.Provider>;
