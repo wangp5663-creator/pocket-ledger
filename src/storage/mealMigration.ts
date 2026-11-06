@@ -3,7 +3,11 @@ import { createRestoreEvent } from '../domain/mealV2';
 import type { MealStateV2 } from '../domain/mealV2';
 
 export function migrateMealV1ToV2(v1: MealState): MealStateV2 {
-  const monthlyBudget = v1.settings.dailyAllowance * 30;
+  const dailyAllowance = Number.isInteger(v1.settings.dailyAllowance) && v1.settings.dailyAllowance > 0
+    ? v1.settings.dailyAllowance
+    : 2000;
+  const monthlyBudget = dailyAllowance * 30;
+  // The 1500 fallback keeps the free allowance positive for small budgets.
   const monthlyMinimum = monthlyBudget > 45000 ? 45000 : Math.max(0, monthlyBudget - 1500);
   const settings = {
     monthlyBudget,

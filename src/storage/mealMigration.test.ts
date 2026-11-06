@@ -60,4 +60,13 @@ describe('migrateMealV1ToV2', () => {
     expect(state.settings.monthlyBudget).toBe(30000);
     expect(state.settings.monthlyMinimum).toBe(28500);
   });
+
+  it('falls back to the default allowance for zero or negative legacy values', () => {
+    const state = migrateMealV1ToV2({
+      settings: { dailyAllowance: 0, startDate: '2026-11-01' },
+      records: {},
+    });
+    expect(state.settings.monthlyBudget).toBe(60000);
+    expect(state.settings.monthlyMinimum).toBe(45000);
+  });
 });
