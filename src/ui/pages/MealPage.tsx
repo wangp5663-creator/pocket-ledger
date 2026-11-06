@@ -179,7 +179,14 @@ export function MealPage() {
               <span>自由额度剩余</span>
               <span>{formatYuan(status.freeRemaining)} / {formatYuan(status.freeAllowance)}</span>
             </div>
-            <div className="free-quota__track">
+            <div
+              className="free-quota__track"
+              role="progressbar"
+              aria-label="自由额度剩余"
+              aria-valuemin={0}
+              aria-valuemax={status.freeAllowance}
+              aria-valuenow={status.freeRemaining}
+            >
               <div
                 className="free-quota__fill"
                 style={{ width: `${Math.min(100, Math.max(0, (status.freeRemaining / status.freeAllowance) * 100))}%` }}
@@ -208,7 +215,7 @@ export function MealPage() {
       <section className="card summary-grid">
         <div><span className="muted">本周期花费</span><strong>{formatYuan(timeline[timeline.length - 1]?.totalSpent ?? 0)}</strong></div>
         <div><span className="muted">本周期额度</span><strong>{formatYuan(timeline[timeline.length - 1]?.totalAllowance ?? 0)}</strong></div>
-        <div><span className="muted">当前阶段</span><strong>{status.switchDate ? '保底 15 元' : '正常 20 元'}</strong></div>
+        <div><span className="muted">当前阶段</span><strong>{status.switchDate ? `保底 ${formatYuan(status.dailyMinimum)}` : `正常 ${formatYuan(status.dailyNormal)}`}</strong></div>
         <div><span className="muted">自由额度</span><strong>{status.mode === 'normal' ? formatYuan(status.freeRemaining) : '无'}</strong></div>
       </section>
 
@@ -222,7 +229,7 @@ export function MealPage() {
               <div className="period-heading">
                 <strong>{formatDisplayDate(period.startDate)} – {formatDisplayDate(period.endDate)}</strong>
                 <div>
-                  {period.switchDate && <span className="mode-badge mode-badge--minimum">15 元阶段</span>}
+                  {period.switchDate && <span className="mode-badge mode-badge--minimum">保底 {formatYuan(period.restore.dailyMinimum)}</span>}
                   <span className="mode-badge">{formatYuan(period.restore.dailyNormal)}/天</span>
                 </div>
               </div>
@@ -282,7 +289,7 @@ export function MealPage() {
           <BeanMascot state="sad" className="mascot--sm" />
           <p>
             没有多余的钱可以随意消费了。接下来每天按{' '}
-            {formatYuan(timeline[timeline.length - 1]?.restore.dailyMinimum ?? 1500)} 计算。
+            {formatYuan(status.dailyMinimum)} 计算。
           </p>
           <button type="button" className="button button--primary" onClick={() => setThresholdOpen(false)}>
             知道了
