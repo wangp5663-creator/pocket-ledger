@@ -6,7 +6,9 @@ import {
   defaultMealStateV2,
   deriveRates,
   missingMealDates,
+  normalizeMealState,
   removeMealRecord,
+  restoreMealNow,
   upsertMealRecord,
   validateMealSettings,
   type MealStateV2,
@@ -196,5 +198,44 @@ describe('meal timeline', () => {
     expect(period.totalSpent).toBe(19000);
     expect(period.net).toBe(period.totalAllowance - period.totalSpent);
     expect(period.endingBalance).toBe(-500);
+  });
+});
+
+describe('restore normalization', () => {
+  it('creates the first restore and fills missed month starts', () => {
+    const state: MealStateV2 = { settings, records: {}, restores: [] };
+    const next = normalizeMealState(state, '2027-02-10');
+    expect(next.restores.map((event) => event.date)).toEqual([
+      '2026-11-01',
+      '2026-12-01',
+      '2027-01-01',
+      '2027-02-01',
+    ]);
+  });
+
+  it('does not add duplicate auto restores', () => {
+    const state: MealStateV2 = {
+      settings,
+      records: {},
+      restores: [createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z')],
+    };
+    const next = normalizeMealState(state, '2026-11-20');
+    expect(next.restores).toHaveLength(1);
+  });
+});
+
+describe('manual restore', () => {
+  it('adds a restore for today and rejects a second one', () => {
+    const state: MealStateV2 = {
+      settings,
+      records: {},
+      restores: [createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z')],
+    };
+    const first = restoreMealNow(state, '2026-11-10');
+    expect(first.error).toBeUndefined();
+    expect(first.state.restores.some((event) => event.date === '2026-11-10')).toBe(true);
+    const second = restoreMealNow(first.state, '2026-11-10');
+    expect(second.error).toBe('今天已经恢复过');
+    expect(second.state.restores.filter((event) => event.date === '2026-11-10')).toHaveLength(1);
   });
 });

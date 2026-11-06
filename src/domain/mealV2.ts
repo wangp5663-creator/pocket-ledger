@@ -1,4 +1,4 @@
-import { addDays, listDates } from './dates';
+import { addDays, addMonths, listDates, monthOf } from './dates';
 import { createId } from './id';
 
 export type MealMode = 'normal' | 'minimum';
@@ -274,4 +274,53 @@ export function currentMealStatus(state: MealStateV2, today: string): MealStatus
     hasRecordToday: Boolean(state.records[today]),
     todayRecord: state.records[today],
   };
+}
+
+export function normalizeMealState(state: MealStateV2, today: string): MealStateV2 {
+  if (!state.settings.startDate) return state;
+
+  let restores = [...state.restores].sort((a, b) => a.date.localeCompare(b.date));
+  if (restores.length === 0) {
+    restores = [
+      createRestoreEvent(state.settings, state.settings.startDate, `${state.settings.startDate}T00:00:00`),
+    ];
+  } else if (restores[0].date > state.settings.startDate) {
+    restores.unshift(
+      createRestoreEvent(state.settings, state.settings.startDate, `${state.settings.startDate}T00:00:00`),
+    );
+  }
+
+  const lastDate = restores[restores.length - 1].date;
+  let cursor = `${addMonths(monthOf(lastDate), 1)}-01`;
+  while (cursor <= today) {
+    if (!restores.some((event) => event.date === cursor)) {
+      restores.push(createRestoreEvent(state.settings, cursor, `${cursor}T00:00:00`));
+    }
+    cursor = `${addMonths(monthOf(cursor), 1)}-01`;
+  }
+
+  restores.sort((a, b) => a.date.localeCompare(b.date));
+  const seen = new Set<string>();
+  restores = restores.filter((event) => {
+    if (seen.has(event.date)) return false;
+    seen.add(event.date);
+    return true;
+  });
+
+  return { ...state, restores };
+}
+
+export interface RestoreResult {
+  state: MealStateV2;
+  error?: string;
+}
+
+export function restoreMealNow(state: MealStateV2, today: string): RestoreResult {
+  const normalized = normalizeMealState(state, today);
+  if (normalized.restores.some((event) => event.date === today)) {
+    return { state: normalized, error: '今天已经恢复过' };
+  }
+  const event = createRestoreEvent(normalized.settings, today, new Date().toISOString());
+  const restores = [...normalized.restores, event].sort((a, b) => a.date.localeCompare(b.date));
+  return { state: { ...normalized, restores } };
 }
