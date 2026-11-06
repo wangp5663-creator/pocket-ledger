@@ -29,13 +29,15 @@ npm run dev -- --host
 ## 部署到 GitHub Pages
 
 1. 在 GitHub 创建仓库 `pocket-ledger`（公开或私有均可，Pages 需要公开或 Pro）。
-2. 推送 `main` 分支：
+2. 先到仓库 Settings → Pages → Build and deployment → Source 选择 **GitHub Actions**。
+3. 推送 `main` 分支：
    ```bash
    git remote add origin https://github.com/<你的GitHub用户名>/pocket-ledger.git
    git push -u origin main
    ```
-3. 仓库 Settings → Pages → Build and deployment → Source 选择 **GitHub Actions**。
 4. 等待 Actions 完成后，访问 `https://<你的GitHub用户名>.github.io/pocket-ledger/`。
+
+如果第一次部署时还没启用 Pages，工作流会失败；启用后到 Actions 页面重新运行一次即可。
 
 ## 安装到手机主屏幕
 
