@@ -11,9 +11,13 @@ describe('StatsPage', () => {
     const user = userEvent.setup();
     const meal = {
       settings: { dailyAllowance: 2000, startDate: todayKey() },
-      records: {},
+      records: { [todayKey()]: { spent: 1500, allowance: 2000, updatedAt: '2026-11-01T00:00:00.000Z' } },
     };
-    renderWithProviders(<StatsPage />, { meal, planning: emptyPlanningState() });
+    const planning = {
+      ...emptyPlanningState(),
+      inflows: [{ id: 'i1', date: todayKey(), amount: 500, createdAt: '2026-11-01T00:00:00.000Z' }],
+    };
+    renderWithProviders(<StatsPage />, { meal, planning });
 
     expect(screen.getByText('每月结余')).toBeInTheDocument();
     expect(screen.getByText('餐补额度')).toBeInTheDocument();
@@ -22,5 +26,14 @@ describe('StatsPage', () => {
     expect(screen.getByText('每月净变化')).toBeInTheDocument();
     expect(screen.getByText('净变化')).toBeInTheDocument();
     expect(screen.queryByText('本月支出')).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state when there is no data', () => {
+    const today = todayKey();
+    const meal = { settings: { dailyAllowance: 2000, startDate: today }, records: {} };
+    renderWithProviders(<StatsPage />, { meal, planning: emptyPlanningState() });
+
+    expect(screen.getByText('还没有数据')).toBeInTheDocument();
+    expect(screen.queryByText('每月结余')).not.toBeInTheDocument();
   });
 });
