@@ -60,7 +60,8 @@ export function MealProvider({ children }: { children: ReactNode }) {
         return '每日餐补必须是大于 0 的金额';
       }
       const today = todayKey();
-      if (!settings.startDate || settings.startDate > today) return '起始日期不能晚于今天';
+      if (!settings.startDate) return '请选择起始日期';
+      if (settings.startDate > today) return '起始日期不能晚于今天';
       const earliest = Object.keys(state.records).sort()[0];
       if (earliest && settings.startDate > earliest) return '起始日期不能晚于已有记录的最早日期';
       setState((previous) => ({ ...previous, settings }));

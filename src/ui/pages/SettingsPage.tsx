@@ -22,6 +22,7 @@ export function SettingsPage() {
     const cents = parseYuanToCents(allowance);
     if (cents === null || cents <= 0) {
       setError('每日餐补必须是大于 0 的有效金额');
+      setMessage('');
       return;
     }
     const result = updateSettings({ dailyAllowance: cents, startDate });
@@ -52,7 +53,6 @@ export function SettingsPage() {
               value={startDate}
               max={todayKey()}
               onChange={(event) => setStartDate(event.target.value)}
-              aria-label="起始日期"
             />
           </label>
           {error && (
@@ -92,6 +92,8 @@ export function SettingsPage() {
           onCancel={() => setClearMealOpen(false)}
           onConfirm={() => {
             clearRecords();
+            setStartDate(todayKey());
+            setError('');
             setClearMealOpen(false);
             setMessage('餐补数据已清空');
           }}
@@ -108,6 +110,7 @@ export function SettingsPage() {
           onConfirm={() => {
             clearAll();
             setClearPlanOpen(false);
+            setError('');
             setMessage('规划账数据已清空');
           }}
         />
