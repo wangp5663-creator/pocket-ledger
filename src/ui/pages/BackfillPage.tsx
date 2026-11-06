@@ -52,7 +52,7 @@ function BackfillRow({ date }: { date: string }) {
 export function BackfillPage() {
   const { state } = useMeal();
   const today = todayKey();
-  const dates = missingDates(state, today);
+  const dates = [...missingDates(state, today)].reverse();
   const groups = dates.reduce<Record<string, string[]>>((accumulator, date) => {
     const month = monthOf(date);
     (accumulator[month] ??= []).push(date);

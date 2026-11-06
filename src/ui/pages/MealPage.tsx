@@ -30,10 +30,10 @@ function RecordRow({ row, onEdit, onDelete }: RecordRowProps) {
         <span className="muted">累计 {formatYuan(row.cumulative)}</span>
       </div>
       <div className="list-row__actions">
-        <button type="button" className="text-button" onClick={() => onEdit(row)}>
+        <button type="button" className="text-button" aria-label={`编辑 ${formatDisplayDate(row.date)}`} onClick={() => onEdit(row)}>
           编辑
         </button>
-        <button type="button" className="text-button text-button--danger" onClick={() => onDelete(row)}>
+        <button type="button" className="text-button text-button--danger" aria-label={`删除 ${formatDisplayDate(row.date)}`} onClick={() => onDelete(row)}>
           删除
         </button>
       </div>
@@ -93,6 +93,10 @@ export function MealPage() {
       return;
     }
     saveRecord(editing.date, cents, editingNote, state.settings.dailyAllowance);
+    if (editing.date === today) {
+      setTodaySpent(centsToYuan(cents));
+      setTodayNote(editingNote);
+    }
     setEditing(null);
   };
 
@@ -102,7 +106,7 @@ export function MealPage() {
         <span className="balance-card__label">当前可用余额</span>
         <strong className={`balance-card__amount${balance < 0 ? ' is-negative' : ''}`}>{formatYuan(balance)}</strong>
         <span className="balance-card__meta">
-          已记录 {rows.length} 天 · 起始 {state.settings.startDate}
+          已记录 {rows.length} 天 · 起始 {formatDisplayDate(state.settings.startDate)}
         </span>
         {balance < 0 && <span className="badge">已超支</span>}
       </section>
@@ -233,6 +237,10 @@ export function MealPage() {
           message={`删除 ${formatDisplayDate(deleting.date)} 的记录后，余额会重新计算。`}
           onCancel={() => setDeleting(null)}
           onConfirm={() => {
+            if (deleting.date === today) {
+              setTodaySpent('');
+              setTodayNote('');
+            }
             deleteRecord(deleting.date);
             setDeleting(null);
           }}

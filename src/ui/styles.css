@@ -279,7 +279,10 @@ h2 {
 .text-button {
   background: none;
   border: none;
-  padding: 4px;
+  padding: 10px 6px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   color: var(--muted);
   cursor: pointer;
   font-size: 13px;
