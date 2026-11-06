@@ -72,7 +72,7 @@ export function StatsPage() {
                     </div>
                     <div className="period-stat__grid">
                       <div><span className="muted">开始额度</span><strong>{formatYuan(period.restore.dailyNormal)}</strong></div>
-                      <div><span className="muted">15切换</span><strong>{period.switchDate ? formatDisplayDate(period.switchDate) : '—'}</strong></div>
+                      <div><span className="muted">保底切换</span><strong>{period.switchDate ? formatDisplayDate(period.switchDate) : '—'}</strong></div>
                       <div><span className="muted">花费</span><strong>{formatYuan(period.totalSpent)}</strong></div>
                       <div>
                         <span className="muted">结束余额</span>
