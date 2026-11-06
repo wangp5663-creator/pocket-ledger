@@ -19,6 +19,7 @@ function BackfillRow({ date, onSave }: { date: string; onSave: (date: string, sp
       setError('请输入有效金额');
       return;
     }
+    setError('');
     onSave(date, cents, note);
   };
 
