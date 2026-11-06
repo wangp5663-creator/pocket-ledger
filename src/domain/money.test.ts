@@ -23,6 +23,8 @@ describe('formatting', () => {
     expect(centsToYuan(2000)).toBe('20.00');
     expect(centsToYuan(-5)).toBe('-0.05');
     expect(formatYuan(1230)).toBe('¥12.30');
+    expect(formatYuan(-500)).toBe('-¥5.00');
+    expect(formatYuan(0)).toBe('¥0.00');
     expect(formatSignedYuan(500)).toBe('+¥5.00');
     expect(formatSignedYuan(-500)).toBe('-¥5.00');
   });

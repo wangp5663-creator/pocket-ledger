@@ -16,7 +16,7 @@ export function centsToYuan(cents: Cents): string {
 }
 
 export function formatYuan(cents: Cents): string {
-  return `¥${centsToYuan(cents)}`;
+  return cents < 0 ? `-¥${centsToYuan(Math.abs(cents))}` : `¥${centsToYuan(cents)}`;
 }
 
 export function formatSignedYuan(cents: Cents): string {
