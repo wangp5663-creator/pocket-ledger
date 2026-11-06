@@ -101,7 +101,7 @@ export function EntrySheet({ mode, initial, events, lockKind = false, onClose, o
             {error}
           </p>
         )}
-        <button className="button button--primary" type="submit">
+        <button className="button button--planning" type="submit">
           保存
         </button>
       </form>

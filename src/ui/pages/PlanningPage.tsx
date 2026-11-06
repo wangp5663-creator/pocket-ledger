@@ -66,7 +66,7 @@ export function PlanningPage() {
       </section>
 
       <div className="action-row">
-        <button type="button" className="button button--primary" onClick={() => setEntryOpen(true)}>
+        <button type="button" className="button button--planning" onClick={() => setEntryOpen(true)}>
           记一笔
         </button>
         <button type="button" className="button button--secondary" onClick={() => setEventOpen(true)}>

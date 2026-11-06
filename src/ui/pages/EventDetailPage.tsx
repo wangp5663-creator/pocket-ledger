@@ -212,7 +212,7 @@ export function EventDetailPage() {
       </section>
 
       <div className="action-row">
-        <button type="button" className="button button--primary" onClick={() => openAddEntry('spend')}>
+        <button type="button" className="button button--planning" onClick={() => openAddEntry('spend')}>
           记支出
         </button>
         <button type="button" className="button button--secondary" onClick={() => openAddEntry('replenish')}>

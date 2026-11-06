@@ -12,6 +12,8 @@
   --danger: #e05656;
   --button-primary-bg: #047857;
   --button-primary-text: #ffffff;
+  --button-planning-bg: #4f46e5;
+  --button-planning-text: #ffffff;
   --button-danger-bg: #b91c1c;
   --button-danger-text: #ffffff;
   --badge-danger-bg: #fee2e2;
@@ -40,6 +42,8 @@
     --danger: #f87171;
     --button-primary-bg: #34d399;
     --button-primary-text: #0f172a;
+    --button-planning-bg: #818cf8;
+    --button-planning-text: #0f172a;
     --button-danger-bg: #f87171;
     --button-danger-text: #0f172a;
     --badge-danger-bg: #4c1d1d;
@@ -266,6 +270,11 @@ h2 {
   color: var(--text);
 }
 
+.button--planning {
+  background: var(--button-planning-bg);
+  color: var(--button-planning-text);
+}
+
 .button--ghost {
   background: transparent;
   color: var(--muted);
@@ -274,6 +283,12 @@ h2 {
 .button--danger {
   background: var(--button-danger-bg);
   color: var(--button-danger-text);
+}
+
+.button--danger-ghost {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
 }
 
 .text-button {
@@ -626,7 +641,11 @@ h2 {
 }
 
 .table--stats .table__row {
-  grid-template-columns: repeat(6, minmax(68px, 1fr));
+  grid-template-columns: minmax(88px, 1.2fr) repeat(5, minmax(64px, 1fr));
+}
+
+.table--stats .table__row > span:first-child {
+  white-space: nowrap;
 }
 
 .table__head {

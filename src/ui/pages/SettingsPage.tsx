@@ -70,10 +70,10 @@ export function SettingsPage() {
       <section className="card">
         <h2 className="card-title">数据</h2>
         <p className="muted">数据只保存在本机浏览器中，清除浏览器数据会丢失记录。</p>
-        <button type="button" className="button button--ghost" onClick={() => setClearMealOpen(true)}>
+        <button type="button" className="button button--danger-ghost" onClick={() => setClearMealOpen(true)}>
           清空餐补数据
         </button>
-        <button type="button" className="button button--ghost" onClick={() => setClearPlanOpen(true)}>
+        <button type="button" className="button button--danger-ghost" onClick={() => setClearPlanOpen(true)}>
           清空规划账数据
         </button>
       </section>

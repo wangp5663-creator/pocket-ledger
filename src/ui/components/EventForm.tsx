@@ -141,7 +141,7 @@ export function EventForm({ initial, submitLabel, onSubmit }: EventFormProps) {
           {error}
         </p>
       )}
-      <button className="button button--primary" type="submit">
+      <button className="button button--planning" type="submit">
         {submitLabel}
       </button>
     </form>
