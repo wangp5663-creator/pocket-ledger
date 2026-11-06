@@ -97,19 +97,22 @@ export function PlanningProvider({ children }: { children: ReactNode }) {
       note: input.note,
       createdAt: new Date().toISOString(),
     };
-    setState((previous) => {
-      if (input.kind === 'inflow') {
-        const entry: InflowEntry = base;
-        return { ...previous, inflows: [...previous.inflows, entry] };
-      }
-      if (!input.eventId) throw new Error('eventId is required for spend and replenish entries');
-      if (input.kind === 'spend') {
-        const entry: SpendEntry = { ...base, eventId: input.eventId };
-        return { ...previous, spends: [...previous.spends, entry] };
-      }
-      const entry: ReplenishEntry = { ...base, eventId: input.eventId };
-      return { ...previous, replenishes: [...previous.replenishes, entry] };
-    });
+    if (input.kind === 'inflow') {
+      const entry: InflowEntry = base;
+      setState((previous) => ({ ...previous, inflows: [...previous.inflows, entry] }));
+      return;
+    }
+    const eventId = input.eventId;
+    if (!eventId) {
+      throw new Error('eventId is required for spend and replenish entries');
+    }
+    if (input.kind === 'spend') {
+      const entry: SpendEntry = { ...base, eventId };
+      setState((previous) => ({ ...previous, spends: [...previous.spends, entry] }));
+      return;
+    }
+    const entry: ReplenishEntry = { ...base, eventId };
+    setState((previous) => ({ ...previous, replenishes: [...previous.replenishes, entry] }));
   }, []);
 
   const updateEntry = useCallback((kind: EntryKind, id: string, input: Omit<EntryInput, 'kind'>) => {
