@@ -49,17 +49,33 @@ export interface MealLoadResult extends LoadResult<MealStateV2> {
 }
 
 export function loadMealStateV2(): MealLoadResult {
-  const v2 = loadJson(MEAL_V2_STORAGE_KEY, isMealStateV2, defaultMealStateV2);
-  if (!v2.error && localStorage.getItem(MEAL_V2_STORAGE_KEY)) return v2;
-
-  const v1 = loadMealState();
-  if (v1.error === undefined && localStorage.getItem('meal-allowance.v1')) {
-    const migrated = migrateMealV1ToV2(v1.value);
-    saveJson(MEAL_V2_STORAGE_KEY, migrated);
-    return { value: migrated, migrated: true };
+  let v2Raw: string | null = null;
+  try {
+    v2Raw = localStorage.getItem(MEAL_V2_STORAGE_KEY);
+  } catch {
+    return { value: defaultMealStateV2(), error: '无法读取本地数据' };
   }
 
-  return v2;
+  if (v2Raw !== null) {
+    return loadJson(MEAL_V2_STORAGE_KEY, isMealStateV2, defaultMealStateV2);
+  }
+
+  let v1Raw: string | null = null;
+  try {
+    v1Raw = localStorage.getItem('meal-allowance.v1');
+  } catch {
+    return { value: defaultMealStateV2(), error: '无法读取本地数据' };
+  }
+
+  if (v1Raw !== null) {
+    const v1 = loadMealState();
+    if (v1.error) return { value: defaultMealStateV2(), error: v1.error };
+    const migrated = migrateMealV1ToV2(v1.value);
+    const saveError = saveJson(MEAL_V2_STORAGE_KEY, migrated);
+    return { value: migrated, migrated: true, ...(saveError ? { error: saveError } : {}) };
+  }
+
+  return { value: defaultMealStateV2() };
 }
 
 export function saveMealStateV2(state: MealStateV2): string | null {

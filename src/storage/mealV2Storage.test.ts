@@ -40,6 +40,28 @@ describe('mealV2Storage', () => {
     expect(localStorage.getItem(MEAL_V2_STORAGE_KEY)).toContain('60000');
   });
 
+  it('does not fall back to v1 when a corrupt v2 blob exists', () => {
+    localStorage.setItem(MEAL_V2_STORAGE_KEY, '{broken');
+    localStorage.setItem(
+      'meal-allowance.v1',
+      JSON.stringify({
+        settings: { dailyAllowance: 2000, startDate: '2026-11-01' },
+        records: {},
+      }),
+    );
+    const result = loadMealStateV2();
+    expect(result.error).toBe('无法读取本地数据');
+    expect(result.migrated).toBeUndefined();
+    expect(localStorage.getItem(MEAL_V2_STORAGE_KEY)).toBe('{broken');
+  });
+
+  it('surfaces corrupt v1 data when no v2 exists', () => {
+    localStorage.setItem('meal-allowance.v1', '{broken');
+    const result = loadMealStateV2();
+    expect(result.error).toBe('无法读取本地数据');
+    expect(result.value.settings.monthlyBudget).toBe(60000);
+  });
+
   it('falls back to defaults when both stores are empty', () => {
     expect(loadMealStateV2().value.settings).toEqual({
       monthlyBudget: 60000,
