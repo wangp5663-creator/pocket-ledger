@@ -25,7 +25,7 @@ describe('StatsPage', () => {
     await user.click(screen.getByRole('tab', { name: '规划账' }));
     expect(screen.getByText('每月净变化')).toBeInTheDocument();
     expect(screen.getByText('净变化')).toBeInTheDocument();
-    expect(screen.queryByText('本月支出')).not.toBeInTheDocument();
+    expect(screen.getByText('补回')).toBeInTheDocument();
   });
 
   it('shows an empty state when there is no data', () => {
@@ -35,5 +35,26 @@ describe('StatsPage', () => {
 
     expect(screen.getByText('还没有数据')).toBeInTheDocument();
     expect(screen.queryByText('每月结余')).not.toBeInTheDocument();
+  });
+
+  it('renders negative balances with the sign before the currency symbol', async () => {
+    const user = userEvent.setup();
+    const today = todayKey();
+    const meal = {
+      settings: { dailyAllowance: 2000, startDate: today },
+      records: { [today]: { spent: 1500, allowance: 2000, updatedAt: '2026-11-01T00:00:00.000Z' } },
+    };
+    const planning = {
+      events: [],
+      spends: [{ id: 's1', eventId: 'e1', date: today, amount: 100000, createdAt: '2026-11-01T00:00:00.000Z' }],
+      replenishes: [],
+      inflows: [{ id: 'i1', date: today, amount: 50000, createdAt: '2026-11-01T00:00:00.000Z' }],
+    };
+    renderWithProviders(<StatsPage />, { meal, planning });
+
+    await user.click(screen.getByRole('tab', { name: '规划账' }));
+
+    expect(screen.getAllByText('-¥500.00').length).toBeGreaterThan(0);
+    expect(screen.queryByText('¥-500.00')).not.toBeInTheDocument();
   });
 });

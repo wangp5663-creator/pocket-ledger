@@ -26,7 +26,7 @@ export function StatsPage() {
   const displayPlanningRows = [...planningRows].reverse();
   const hasData =
     ledger === 'meal'
-      ? Object.keys(mealState.records).length > 0
+      ? Object.keys(mealState.records).some((date) => date >= mealState.settings.startDate)
       : planningState.spends.length + planningState.replenishes.length + planningState.inflows.length > 0;
 
   return (
