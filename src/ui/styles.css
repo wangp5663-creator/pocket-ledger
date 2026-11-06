@@ -1055,3 +1055,39 @@ h2 {
     scroll-behavior: auto !important;
   }
 }
+
+.period-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.period-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.period-stat__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.period-stat__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  font-size: 13px;
+}
+
+.period-stat__grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

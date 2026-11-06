@@ -61,23 +61,25 @@ export function StatsPage() {
             />
           </section>
 
-          <section className="card table-wrap">
+          <section className={ledger === 'meal' ? 'card' : 'card table-wrap'}>
             {ledger === 'meal' ? (
-              <div className="table table--stats">
-                <div className="table__row table__head">
-                  <span>周期</span><span>开始额度</span><span>15切换</span><span>花费</span><span>结束余额</span><span>结转</span>
-                </div>
+              <div className="period-stats">
                 {displayPeriods.map((period) => (
-                  <div className="table__row" key={period.restore.id}>
-                    <span>
-                      {formatDisplayDate(period.startDate)}–{formatDisplayDate(period.endDate)}
-                      {period.endDate === today ? ' · 进行中' : ''}
-                    </span>
-                    <span>{formatYuan(period.restore.dailyNormal)}</span>
-                    <span>{period.switchDate ? formatDisplayDate(period.switchDate) : '—'}</span>
-                    <span>{formatYuan(period.totalSpent)}</span>
-                    <span className={period.endingBalance >= 0 ? 'positive' : 'negative'}>{formatSignedYuan(period.endingBalance)}</span>
-                    <span>{period.carry > 0 ? formatYuan(period.carry) : '已清零'}</span>
+                  <div className="period-stat" key={period.restore.id}>
+                    <div className="period-stat__head">
+                      <strong>{formatDisplayDate(period.startDate)} – {formatDisplayDate(period.endDate)}</strong>
+                      {period.endDate === today && <span className="mode-badge">进行中</span>}
+                    </div>
+                    <div className="period-stat__grid">
+                      <div><span className="muted">开始额度</span><strong>{formatYuan(period.restore.dailyNormal)}</strong></div>
+                      <div><span className="muted">15切换</span><strong>{period.switchDate ? formatDisplayDate(period.switchDate) : '—'}</strong></div>
+                      <div><span className="muted">花费</span><strong>{formatYuan(period.totalSpent)}</strong></div>
+                      <div>
+                        <span className="muted">结束余额</span>
+                        <strong className={period.endingBalance >= 0 ? 'positive' : 'negative'}>{formatSignedYuan(period.endingBalance)}</strong>
+                      </div>
+                      <div><span className="muted">结转</span><strong>{period.carry > 0 ? formatYuan(period.carry) : '已清零'}</strong></div>
+                    </div>
                   </div>
                 ))}
               </div>
