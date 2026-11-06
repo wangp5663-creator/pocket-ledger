@@ -24,4 +24,14 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: '统计' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '设置' })).toBeInTheDocument();
   });
+
+  it('renders the selected route and marks its tab active', () => {
+    renderWithProviders(<App />, {
+      route: '/stats',
+      meal: { settings: { dailyAllowance: 2000, startDate: todayKey() }, records: {} },
+      planning: emptyPlanningState(),
+    });
+    expect(screen.getByRole('heading', { name: '统计' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '统计' })).toHaveClass('is-active');
+  });
 });

@@ -54,7 +54,7 @@ const NAV_ITEMS: Array<{ to: string; label: string; icon: ReactNode }> = [
 
 function BottomNav() {
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" aria-label="主导航">
       <div className="bottom-nav__inner">
         {NAV_ITEMS.map((item) => (
           <NavLink
@@ -63,7 +63,9 @@ function BottomNav() {
             end={item.to === '/'}
             className={({ isActive }) => `bottom-nav__item${isActive ? ' is-active' : ''}`}
           >
-            <span className="bottom-nav__icon">{item.icon}</span>
+            <span className="bottom-nav__icon" aria-hidden="true">
+              {item.icon}
+            </span>
             <span>{item.label}</span>
           </NavLink>
         ))}
