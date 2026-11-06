@@ -932,6 +932,21 @@ h2 {
   color: #7c5a2e;
 }
 
+.balance-card--indigo .balance-card__amount.is-negative {
+  color: #5f3530;
+}
+
+.balance-card--indigo .balance-card__label,
+.balance-card--indigo .balance-card__meta,
+.balance-card--happy .balance-card__label,
+.balance-card--happy .balance-card__meta,
+.balance-card--sad .balance-card__label,
+.balance-card--sad .balance-card__meta,
+.balance-card--minimum .balance-card__label,
+.balance-card--minimum .balance-card__meta {
+  opacity: 1;
+}
+
 .status-pill {
   display: inline-flex;
   align-self: flex-start;
@@ -1004,7 +1019,7 @@ h2 {
   border-radius: 999px;
   font-size: 11px;
   background: var(--surface-soft);
-  color: var(--muted);
+  color: var(--text);
 }
 
 .mode-badge--minimum {
@@ -1018,4 +1033,25 @@ h2 {
   align-items: center;
   gap: 12px;
   text-align: center;
+}
+
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.mascot {
+  animation: mascot-bob 3.2s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
