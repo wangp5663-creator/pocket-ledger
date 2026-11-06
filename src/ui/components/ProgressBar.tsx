@@ -4,7 +4,8 @@ interface ProgressBarProps {
 }
 
 export function ProgressBar({ value, tone = 'indigo' }: ProgressBarProps) {
-  const percent = Math.max(0, Math.min(100, value));
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const percent = Math.max(0, Math.min(100, safeValue));
   return (
     <div
       className="progress"

@@ -8,7 +8,7 @@ interface MoneyInputProps {
 export function MoneyInput({ value, onChange, ariaLabel, placeholder = '0.00' }: MoneyInputProps) {
   return (
     <div className="money-input">
-      <span className="money-input__prefix">¥</span>
+      <span className="money-input__prefix" aria-hidden="true">¥</span>
       <input
         inputMode="decimal"
         aria-label={ariaLabel}
