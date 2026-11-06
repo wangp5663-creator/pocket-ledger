@@ -121,7 +121,7 @@ export function EventForm({ initial, submitLabel, onSubmit }: EventFormProps) {
             <button
               type="button"
               className="icon-button"
-              aria-label="删除补回计划"
+              aria-label={`删除补回计划 ${index + 1}`}
               onClick={() => setPlanRows((rows) => rows.filter((_, rowIndex) => rowIndex !== index))}
             >
               ×

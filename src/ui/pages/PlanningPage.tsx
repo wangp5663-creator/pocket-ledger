@@ -60,8 +60,8 @@ export function PlanningPage() {
           <strong className="positive">{formatYuan(summary.inflows)}</strong>
         </div>
         <div>
-          <span className="muted">月末余额</span>
-          <strong>{formatYuan(summary.endBalance)}</strong>
+          <span className="muted">本月净变化</span>
+          <strong className={summary.net >= 0 ? 'positive' : 'negative'}>{formatSignedYuan(summary.net)}</strong>
         </div>
       </section>
 
@@ -93,7 +93,9 @@ export function PlanningPage() {
                   {progress.outstanding < 0 && (
                     <span className="badge badge--success">多补 {formatYuan(-progress.outstanding)}</span>
                   )}
-                  {progress.outstanding === 0 && <span className="badge badge--success">已补齐</span>}
+                  {progress.outstanding === 0 && progress.spent > 0 && (
+                    <span className="badge badge--success">已补齐</span>
+                  )}
                 </div>
                 <ProgressBar value={percent} tone="indigo" />
                 <div className="event-card__meta muted">
