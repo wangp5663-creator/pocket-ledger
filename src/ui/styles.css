@@ -479,6 +479,11 @@ h2 {
   color: var(--muted);
 }
 
+.event-card__head .badge--success {
+  background: var(--badge-success-bg);
+  color: var(--badge-success-text);
+}
+
 .event-card__meta {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
