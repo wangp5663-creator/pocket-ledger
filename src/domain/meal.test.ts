@@ -107,4 +107,18 @@ describe('meal month summary', () => {
     };
     expect(mealMonthSummary(state, '2026-11', '2026-11-10').endBalance).toBe(1000);
   });
+
+  it('caps past-month end balance at that month end', () => {
+    const state: MealState = {
+      settings: { dailyAllowance: 2000, startDate: '2026-10-01' },
+      records: {
+        '2026-10-31': record(1000),
+        '2026-11-01': record(1000),
+      },
+    };
+    const summary = mealMonthSummary(state, '2026-10', '2026-11-10');
+    expect(summary.daysRecorded).toBe(1);
+    expect(summary.net).toBe(1000);
+    expect(summary.endBalance).toBe(1000);
+  });
 });
