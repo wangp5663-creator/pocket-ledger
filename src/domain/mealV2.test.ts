@@ -156,4 +156,45 @@ describe('meal timeline', () => {
     expect(status.dailyAllowance).toBe(1500);
     expect(status.hasRecordToday).toBe(false);
   });
+
+  it('reports normal-mode free quota and distance', () => {
+    const state = withRecords({
+      '2026-11-01': { spent: 1000, updatedAt: '2026-11-01T00:00:00.000Z' },
+    });
+    const status = currentMealStatus(state, '2026-11-10');
+    expect(status.mode).toBe('normal');
+    expect(status.balance).toBe(1000);
+    expect(status.freeRemaining).toBe(15000);
+    expect(status.distanceToMinimum).toBe(16000);
+  });
+
+  it('clears a negative period balance at the next restore', () => {
+    const state: MealStateV2 = {
+      settings,
+      records: {
+        '2026-11-02': { spent: 12000, updatedAt: '2026-11-02T00:00:00.000Z' },
+        '2026-12-02': { spent: 1000, updatedAt: '2026-12-02T00:00:00.000Z' },
+      },
+      restores: [
+        createRestoreEvent(settings, '2026-11-01', '2026-11-01T00:00:00.000Z'),
+        createRestoreEvent(settings, '2026-12-01', '2026-12-01T00:00:00.000Z'),
+      ],
+    };
+    const periods = buildMealTimeline(state, '2026-12-10');
+    expect(periods[0].endingBalance).toBe(-10000);
+    expect(periods[1].openingBalance).toBe(0);
+    expect(periods[1].endingBalance).toBe(1000);
+  });
+
+  it('counts the free allowance in a switched period total allowance', () => {
+    const state = withRecords({
+      '2026-11-01': { spent: 17000, updatedAt: '2026-11-01T00:00:00.000Z' },
+      '2026-11-02': { spent: 2000, updatedAt: '2026-11-02T00:00:00.000Z' },
+    });
+    const period = buildMealTimeline(state, '2026-11-10')[0];
+    expect(period.totalAllowance).toBe(18500); // 2000 + 15000 rebase + 1500
+    expect(period.totalSpent).toBe(19000);
+    expect(period.net).toBe(period.totalAllowance - period.totalSpent);
+    expect(period.endingBalance).toBe(-500);
+  });
 });

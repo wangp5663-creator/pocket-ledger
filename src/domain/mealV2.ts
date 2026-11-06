@@ -200,6 +200,7 @@ export function buildMealTimeline(state: MealStateV2, today: string): MealPeriod
         mode = 'minimum';
         switchDate = date;
         balance += restore.freeAllowance;
+        totalAllowance += restore.freeAllowance;
       }
 
       days.push({
