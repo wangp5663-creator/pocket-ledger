@@ -329,10 +329,23 @@ describe('custom periods', () => {
     ]);
   });
 
-  it('rejects dates before the app start date', () => {
-    expect(customizePeriod(state, '2026-11-10', '2026-10-25', '2026-11-05').error).toBe(
-      '不能早于起始日期',
-    );
+  it('allows a custom range before the app start date and moves the start date back', () => {
+    const lateState: MealStateV2 = {
+      settings: { ...settings, startDate: '2026-11-06' },
+      records: {},
+      restores: [createRestoreEvent(settings, '2026-11-06', '2026-11-06T00:00:00.000Z')],
+    };
+    const result = customizePeriod(lateState, '2026-11-07', '2026-11-01', '2026-11-30');
+    expect(result.error).toBeUndefined();
+    expect(result.state.settings.startDate).toBe('2026-11-01');
+    expect(result.state.restores.map((event) => event.date)).toEqual([
+      '2026-11-01',
+      '2026-12-01',
+    ]);
+    const status = currentMealStatus(result.state, '2026-11-07');
+    expect(status.startDate).toBe('2026-11-01');
+    expect(status.endDate).toBe('2026-11-30');
+    expect(missingMealDates(result.state, '2026-11-07')[0]).toBe('2026-11-01');
   });
 });
 

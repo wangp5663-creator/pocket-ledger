@@ -11,7 +11,6 @@ import {
 interface PeriodCalendarProps {
   initialStart: string;
   initialEnd: string;
-  minDate: string;
   today: string;
   onConfirm: (startDate: string, endDate: string) => void;
   onCancel: () => void;
@@ -22,7 +21,6 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 export function PeriodCalendar({
   initialStart,
   initialEnd,
-  minDate,
   today,
   onConfirm,
   onCancel,
@@ -39,7 +37,6 @@ export function PeriodCalendar({
   });
 
   const selectDate = (date: string) => {
-    if (date < minDate) return;
     if (!start || (start && end && start !== end)) {
       setStart(date);
       setEnd(date);
@@ -75,7 +72,6 @@ export function PeriodCalendar({
           if (!date) return <span key={`blank-${index}`} />;
           const inRange = start && end && date >= start && date <= end;
           const selected = date === start || date === end;
-          const disabled = date < minDate;
           return (
             <button
               key={date}
@@ -86,7 +82,6 @@ export function PeriodCalendar({
                 selected ? 'is-selected' : '',
                 date === today ? 'is-today' : '',
               ].filter(Boolean).join(' ')}
-              disabled={disabled}
               onClick={() => selectDate(date)}
             >
               {Number(date.slice(8))}

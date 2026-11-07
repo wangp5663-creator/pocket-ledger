@@ -135,7 +135,9 @@ export function SettingsPage() {
         >
           自定义周期（含历史）
         </button>
-        <p className="muted">日历可调整历史、当前和未来周期；恢复后负数清零、正数带入；手动恢复每天最多一次。</p>
+        <p className="muted">
+          日历可调整历史、当前和未来周期，也可以选到起始日期之前（起始日期会随之前移）；缺记的日子可到「补记」补上。恢复后负数清零、正数带入；手动恢复每天最多一次。
+        </p>
       </section>
 
       {calendarOpen && (
@@ -148,7 +150,6 @@ export function SettingsPage() {
           <PeriodCalendar
             initialStart={status.startDate}
             initialEnd={status.endDate}
-            minDate={state.settings.startDate}
             today={today}
             onCancel={() => setCalendarOpen(false)}
             onConfirm={(startDate, endDate) => {

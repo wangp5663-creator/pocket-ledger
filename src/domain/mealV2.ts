@@ -394,10 +394,9 @@ export function customizePeriod(
   if (startDate > endDate) {
     return { state: normalized, error: '开始日期不能晚于结束日期' };
   }
-  if (startDate < normalized.settings.startDate) {
-    return { state: normalized, error: '不能早于起始日期' };
-  }
 
+  const nextStartDate =
+    startDate < normalized.settings.startDate ? startDate : normalized.settings.startDate;
   const restores = [...normalized.restores].sort((a, b) => a.date.localeCompare(b.date));
   if (restores.length === 0) {
     return { state: normalized, error: '还没有周期' };
@@ -407,7 +406,7 @@ export function customizePeriod(
   const periodSettings: MealSettingsV2 = {
     monthlyBudget: anchor.monthlyBudget,
     monthlyMinimum: anchor.monthlyMinimum,
-    startDate: normalized.settings.startDate,
+    startDate: nextStartDate,
     cycleStartDay: anchor.cycleStartDay ?? normalized.settings.cycleStartDay ?? 1,
   };
 
@@ -421,5 +420,11 @@ export function customizePeriod(
     ...(nextExists ? [] : [createRestoreEvent(periodSettings, nextStart, now)]),
   ].sort((a, b) => a.date.localeCompare(b.date));
 
-  return { state: { ...normalized, restores: nextRestores } };
+  return {
+    state: {
+      ...normalized,
+      settings: { ...normalized.settings, startDate: nextStartDate },
+      restores: nextRestores,
+    },
+  };
 }
