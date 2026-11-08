@@ -1243,3 +1243,25 @@ h2 {
   color: var(--border);
   cursor: default;
 }
+
+.entry-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.entry-link__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entry-link__chevron {
+  color: var(--muted);
+  font-size: calc(20px * var(--font-scale, 1));
+  line-height: 1;
+}
