@@ -39,4 +39,27 @@ describe('MealRecordsPage', () => {
     await user.click(screen.getByRole('button', { name: '确认删除' }));
     expect(screen.queryByRole('button', { name: `删除 ${formatDisplayDate(todayKey())}` })).not.toBeInTheDocument();
   });
+
+  it('confirms before deleting when the phase would change', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<MealRecordsPage />, { meal: makeState(17000), route: '/meal/records' });
+    await user.click(screen.getByRole('button', { name: `删除 ${formatDisplayDate(todayKey())}` }));
+    expect(screen.getByText('删除会改变当前阶段，仍要删除吗？')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '确认删除' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认删除' }));
+    expect(screen.queryByRole('button', { name: `删除 ${formatDisplayDate(todayKey())}` })).not.toBeInTheDocument();
+  });
+
+  it('confirms before editing when the phase would change', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<MealRecordsPage />, { meal: makeState(17000), route: '/meal/records' });
+    await user.click(screen.getByRole('button', { name: `编辑 ${formatDisplayDate(todayKey())}` }));
+    const input = screen.getByLabelText('修改金额');
+    await user.clear(input);
+    await user.type(input, '10');
+    await user.click(screen.getByRole('button', { name: '保存修改' }));
+    expect(screen.getByText('这次修改会改变当前阶段，确认继续吗？')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认' }));
+    expect(await screen.findByText(/额度 ¥\d+\.\d{2} · 花费 ¥10\.00/)).toBeInTheDocument();
+  });
 });
