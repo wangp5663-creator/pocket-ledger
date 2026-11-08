@@ -4,6 +4,7 @@ import { formatDisplayDate, todayKey } from '../../domain/dates';
 import { buildMealTimeline, currentMealStatus, deriveRates } from '../../domain/mealV2';
 import { centsToYuan, formatYuan, parseYuanToCents } from '../../domain/money';
 import { useMeal } from '../../state/MealStore';
+import { usePlan } from '../../state/PlanStore';
 import { usePlanning } from '../../state/PlanningStore';
 import {
   applyFontScale,
@@ -20,7 +21,8 @@ import { Sheet } from '../components/Sheet';
 
 export function SettingsPage() {
   const { state, updateSettings, restoreNow, customizePeriod, clearRecords } = useMeal();
-  const { clearAll } = usePlanning();
+  const { clearAll: clearLedger } = usePlanning();
+  const { clearAll: clearPlanItems } = usePlan();
   const today = todayKey();
   const status = currentMealStatus(state, today);
   const rates = deriveRates(state.settings, status.startDate || today);
@@ -35,6 +37,7 @@ export function SettingsPage() {
   const [error, setError] = useState('');
   const [clearMealOpen, setClearMealOpen] = useState(false);
   const [clearPlanOpen, setClearPlanOpen] = useState(false);
+  const [clearItemsOpen, setClearItemsOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [fontScale, setFontScale] = useState<FontScaleValue>(() => loadFontScale());
   const alreadyRestoredToday = state.restores.some((restore) => restore.date === today);
@@ -83,7 +86,7 @@ export function SettingsPage() {
       return;
     }
     setError('');
-    setMessage('已恢复正常额度');
+    setMessage('周期已恢复');
   };
 
   return (
@@ -113,10 +116,11 @@ export function SettingsPage() {
             />
           </label>
           <p className="muted">
-            整月自由额度 {formatYuan(rates.freeAllowance)} · 日均正常 {formatYuan(rates.dailyNormal)} / 日均保底 {formatYuan(rates.dailyMinimum)}
+            整月自由额度 {formatYuan(rates.freeAllowance)} · 正常 {formatYuan(rates.dailyNormal)}/天 · 保底{' '}
+            {formatYuan(rates.dailyMinimum)}/天
           </p>
           <p className="muted">周期默认从每月起始日到下个月起始日前一天；修改后下次恢复生效。</p>
-          <p className="muted">起始日期 {state.settings.startDate ? formatDisplayDate(state.settings.startDate) : '未设置'}</p>
+          <p className="muted">开始日期 {state.settings.startDate ? formatDisplayDate(state.settings.startDate) : '未设置'}</p>
           {error && <p className="form-error" role="alert">{error}</p>}
           {message && <p className="positive" role="status" aria-live="polite">{message}</p>}
           <button className="button button--primary" type="submit">保存设置</button>
@@ -128,8 +132,15 @@ export function SettingsPage() {
         <div className="summary-grid">
           <div><span className="muted">开始日期</span><strong>{formatDisplayDate(status.startDate)}</strong></div>
           <div><span className="muted">结束日期</span><strong>{formatDisplayDate(status.endDate)}</strong></div>
-          <div><span className="muted">开始额度</span><strong>{formatYuan(status.dailyNormal)}/天</strong></div>
-          <div><span className="muted">当前阶段</span><strong>{status.switchDate ? `保底 ${formatYuan(status.dailyMinimum)}` : `正常 ${formatYuan(status.dailyNormal)}`}</strong></div>
+          <div><span className="muted">每日正常额度</span><strong>{formatYuan(status.dailyNormal)}/天</strong></div>
+          <div>
+            <span className="muted">当前阶段</span>
+            <strong>
+              {status.switchDate
+                ? `保底阶段 ${formatYuan(status.dailyMinimum)}/天`
+                : `正常阶段 ${formatYuan(status.dailyNormal)}/天`}
+            </strong>
+          </div>
           <div><span className="muted">自由额度</span><strong>{status.mode === 'normal' ? formatYuan(status.freeRemaining) : '无'}</strong></div>
         </div>
         <button
@@ -138,7 +149,7 @@ export function SettingsPage() {
           disabled={alreadyRestoredToday}
           onClick={() => setRestoreOpen(true)}
         >
-          {alreadyRestoredToday ? '今天已经恢复过' : '立即恢复正常额度'}
+          {alreadyRestoredToday ? '今天已经恢复过' : '立即恢复周期'}
         </button>
         <button
           type="button"
@@ -151,7 +162,7 @@ export function SettingsPage() {
           自定义周期（含历史）
         </button>
         <p className="muted">
-          日历可调整历史、当前和未来周期，也可以选到起始日期之前（起始日期会随之前移）；缺记的日子可到「补记」补上。恢复后负数清零、正数带入；手动恢复每天最多一次。
+          日历可调整历史、当前和未来周期，也可以选到开始日期之前（开始日期会随之前移）；缺记的日子可到「补记」补上。恢复后负结余清零、正结余结转到新周期；手动恢复每天最多一次。
         </p>
       </section>
 
@@ -195,12 +206,15 @@ export function SettingsPage() {
 
       <section className="card">
         <h2 className="card-title">数据</h2>
-        <p className="muted">数据只保存在本机浏览器中，清除浏览器数据会丢失记录。</p>
+        <p className="muted">数据只保存在本机，清除应用数据会丢失记录。</p>
         <button type="button" className="button button--danger-ghost" onClick={() => setClearMealOpen(true)}>
           清空餐补数据
         </button>
         <button type="button" className="button button--danger-ghost" onClick={() => setClearPlanOpen(true)}>
-          清空规划账数据
+          清空补回账数据
+        </button>
+        <button type="button" className="button button--danger-ghost" onClick={() => setClearItemsOpen(true)}>
+          清空用款计划
         </button>
       </section>
 
@@ -227,14 +241,14 @@ export function SettingsPage() {
 
       <section className="card">
         <h2 className="card-title">关于</h2>
-        <p className="muted">小账本 v{__APP_VERSION__} · 数据版本 v2</p>
+        <p className="muted">小账本 v{__APP_VERSION__}</p>
       </section>
 
       {restoreOpen && (
         <ConfirmDialog
           open
-          title="立即恢复正常额度？"
-          message="负数将清零、正数将带入新周期；手动恢复每天最多一次。"
+          title="立即恢复周期？"
+          message="负结余将清零、正结余将结转到新周期；手动恢复每天最多一次。"
           confirmLabel="确认恢复"
           onCancel={() => setRestoreOpen(false)}
           onConfirm={() => {
@@ -263,15 +277,31 @@ export function SettingsPage() {
       {clearPlanOpen && (
         <ConfirmDialog
           open
-          title="清空规划账数据？"
+          title="清空补回账数据？"
           message="将删除所有事项、支出、补回和汇入记录，且无法恢复。"
           confirmLabel="确认清空"
           onCancel={() => setClearPlanOpen(false)}
           onConfirm={() => {
-            clearAll();
+            clearLedger();
             setClearPlanOpen(false);
             setError('');
-            setMessage('规划账数据已清空');
+            setMessage('补回账数据已清空');
+          }}
+        />
+      )}
+
+      {clearItemsOpen && (
+        <ConfirmDialog
+          open
+          title="清空用款计划？"
+          message="将删除所有用款计划条目，且无法恢复。"
+          confirmLabel="确认清空"
+          onCancel={() => setClearItemsOpen(false)}
+          onConfirm={() => {
+            clearPlanItems();
+            setClearItemsOpen(false);
+            setError('');
+            setMessage('用款计划已清空');
           }}
         />
       )}

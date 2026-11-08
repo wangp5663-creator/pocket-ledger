@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { addDays, todayKey } from '../../domain/dates';
 import { MEAL_V2_STORAGE_KEY } from '../../storage/mealV2Storage';
+import { PLAN_ITEMS_STORAGE_KEY } from '../../storage/planItemsStorage';
 import { mealFixture, renderWithProviders } from '../../test/render';
 import { SettingsPage } from './SettingsPage';
 
@@ -31,12 +32,12 @@ describe('SettingsPage v2', () => {
       settings: { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: addDays(today, -5) },
     });
     renderWithProviders(<SettingsPage />, { meal });
-    await user.click(screen.getByRole('button', { name: '立即恢复正常额度' }));
+    await user.click(screen.getByRole('button', { name: '立即恢复周期' }));
     await user.click(screen.getByRole('button', { name: '确认恢复' }));
 
     const saved = JSON.parse(localStorage.getItem(MEAL_V2_STORAGE_KEY) ?? '{}');
     expect(saved.restores.some((restore: { date: string }) => restore.date === today)).toBe(true);
-    expect(screen.getByText('已恢复正常额度')).toBeInTheDocument();
+    expect(screen.getByText('周期已恢复')).toBeInTheDocument();
   });
 
   it('shows configured daily rates in the current period', () => {
@@ -44,7 +45,7 @@ describe('SettingsPage v2', () => {
       settings: { monthlyBudget: 80000, monthlyMinimum: 45000, startDate: todayKey() },
     });
     renderWithProviders(<SettingsPage />, { meal });
-    expect(screen.getByText('正常 ¥26.67')).toBeInTheDocument();
+    expect(screen.getByText('正常阶段 ¥26.67/天')).toBeInTheDocument();
   });
 
   it('disables manual restore when today already has a restore', () => {
@@ -90,5 +91,26 @@ describe('SettingsPage v2', () => {
     expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.1');
     const saved = JSON.parse(localStorage.getItem('pocket-ledger.ui.v1') ?? '{}');
     expect(saved.fontScale).toBe(1.1);
+  });
+
+  it('clears plan items separately from the ledger', async () => {
+    const user = userEvent.setup();
+    const plan = {
+      items: [
+        {
+          id: 'p1',
+          spendMonth: '2026-11',
+          title: '换电脑',
+          amount: 500000,
+          replenishMonth: '2026-12',
+          createdAt: '2026-11-01T00:00:00.000Z',
+        },
+      ],
+    };
+    renderWithProviders(<SettingsPage />, { meal: mealFixture(), plan });
+    await user.click(screen.getByRole('button', { name: '清空用款计划' }));
+    await user.click(screen.getByRole('button', { name: '确认清空' }));
+    expect(screen.getByText('用款计划已清空')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(PLAN_ITEMS_STORAGE_KEY) ?? '{}').items).toEqual([]);
   });
 });
