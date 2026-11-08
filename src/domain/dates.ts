@@ -89,3 +89,24 @@ export function formatCompactMonth(month: string, today: string): string {
   const [year, monthNumber] = month.split('-').map(Number);
   return year === Number(today.slice(0, 4)) ? `${monthNumber}月` : `${String(year).slice(2)}年${monthNumber}月`;
 }
+
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+export function formatFullDisplayDate(key: string): string {
+  const [year, month, day] = key.split('-').map(Number);
+  return `${year}年${month}月${day}日 ${WEEKDAYS[new Date(year, month - 1, day).getDay()]}`;
+}
+
+export function formatPeriodRange(start: string, end: string): string {
+  const startYear = start.slice(0, 4);
+  const endYear = end.slice(0, 4);
+  const endText = startYear === endYear ? formatDisplayDate(end) : `${endYear}年${formatDisplayDate(end)}`;
+  return `${startYear}年${formatDisplayDate(start)} – ${endText}`;
+}
+
+export function formatPeriodShort(start: string, end: string): string {
+  const startMonth = monthOf(start);
+  const endMonth = monthOf(end);
+  if (startMonth === endMonth) return `${Number(start.slice(5, 7))}月`;
+  return `${Number(start.slice(5, 7))}/${Number(start.slice(8))}–${Number(end.slice(5, 7))}/${Number(end.slice(8))}`;
+}
