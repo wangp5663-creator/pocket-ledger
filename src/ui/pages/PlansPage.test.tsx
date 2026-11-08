@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { addMonths, monthOf, todayKey } from '../../domain/dates';
+import { addMonths, formatShortMonth, monthOf, todayKey } from '../../domain/dates';
 import { emptyPlanState, type PlanState } from '../../domain/planItems';
 import { renderWithProviders } from '../../test/render';
 import { PlansPage } from './PlansPage';
@@ -72,5 +72,12 @@ describe('PlansPage', () => {
     expect(screen.getByText('计划回补')).toBeInTheDocument();
     expect(screen.getByText('累计')).toBeInTheDocument();
     expect(screen.getAllByText(/净额/).length).toBeGreaterThan(0);
+
+    const current = monthOf(todayKey());
+    expect(
+      screen.getByRole('button', {
+        name: `${formatShortMonth(current, todayKey())} 换电脑 ¥5000.00 回补 ${formatShortMonth(addMonths(current, 1), todayKey())}`,
+      }),
+    ).toBeInTheDocument();
   });
 });

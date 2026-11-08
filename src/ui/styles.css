@@ -1272,6 +1272,7 @@ h2 {
 
 .table__row--button {
   width: 100%;
+  appearance: none;
   border-top: none;
   border-left: none;
   border-right: none;

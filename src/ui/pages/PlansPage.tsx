@@ -126,6 +126,7 @@ export function PlansPage() {
                   type="button"
                   className="table__row table__row--button"
                   key={item.id}
+                  aria-label={`${formatShortMonth(item.spendMonth, today)} ${item.title} ${formatYuan(item.amount)} 回补 ${formatShortMonth(item.replenishMonth, today)}`}
                   onClick={() => setEditing(item)}
                 >
                   <span>{formatShortMonth(item.spendMonth, today)}</span>
