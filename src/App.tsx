@@ -1,6 +1,7 @@
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useMeal } from './state/MealStore';
+import { usePlan } from './state/PlanStore';
 import { usePlanning } from './state/PlanningStore';
 import { Onboarding } from './ui/pages/Onboarding';
 import { MealPage } from './ui/pages/MealPage';
@@ -9,6 +10,10 @@ import { PlanningPage } from './ui/pages/PlanningPage';
 import { EventDetailPage } from './ui/pages/EventDetailPage';
 import { StatsPage } from './ui/pages/StatsPage';
 import { SettingsPage } from './ui/pages/SettingsPage';
+import { CompletedEventsPage } from './ui/pages/CompletedEventsPage';
+import { InflowsPage } from './ui/pages/InflowsPage';
+import { MealRecordsPage } from './ui/pages/MealRecordsPage';
+import { PlansPage } from './ui/pages/PlansPage';
 
 const NAV_ITEMS: Array<{ to: string; label: string; icon: ReactNode }> = [
   {
@@ -23,7 +28,7 @@ const NAV_ITEMS: Array<{ to: string; label: string; icon: ReactNode }> = [
   },
   {
     to: '/planning',
-    label: '规划账',
+    label: '补回账',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M6 3h9l4 4v14H6z" />
@@ -77,7 +82,8 @@ function BottomNav() {
 function StorageBanner() {
   const meal = useMeal();
   const planning = usePlanning();
-  const message = meal.storageError ?? planning.storageError;
+  const plan = usePlan();
+  const message = meal.storageError ?? planning.storageError ?? plan.storageError;
   if (!message) return null;
   return (
     <div className="storage-banner" role="alert">
@@ -87,6 +93,7 @@ function StorageBanner() {
         onClick={() => {
           meal.dismissError();
           planning.dismissError();
+          plan.dismissError();
         }}
       >
         知道了
@@ -105,8 +112,12 @@ export default function App() {
         <Routes>
           <Route path="/" element={<MealPage />} />
           <Route path="/meal/backfill" element={<BackfillPage />} />
+          <Route path="/meal/records" element={<MealRecordsPage />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/planning/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/planning/completed" element={<CompletedEventsPage />} />
+          <Route path="/planning/inflows" element={<InflowsPage />} />
+          <Route path="/planning/plans" element={<PlansPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { emptyPlanState } from './domain/planItems';
 import { emptyPlanningState } from './domain/planning';
 import { mealFixture, renderWithProviders } from './test/render';
 import App from './App';
@@ -9,6 +10,7 @@ describe('App', () => {
     renderWithProviders(<App />, {
       meal: mealFixture({ settings: { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: '' } }),
       planning: emptyPlanningState(),
+      plan: emptyPlanState(),
     });
     expect(screen.getByRole('button', { name: '开始记账' })).toBeInTheDocument();
   });
@@ -17,9 +19,10 @@ describe('App', () => {
     renderWithProviders(<App />, {
       meal: mealFixture(),
       planning: emptyPlanningState(),
+      plan: emptyPlanState(),
     });
     expect(screen.getByRole('link', { name: '餐补' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '规划账' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '补回账' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '统计' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '设置' })).toBeInTheDocument();
   });
@@ -29,8 +32,19 @@ describe('App', () => {
       route: '/stats',
       meal: mealFixture(),
       planning: emptyPlanningState(),
+      plan: emptyPlanState(),
     });
     expect(screen.getByRole('heading', { name: '统计' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '统计' })).toHaveClass('is-active');
+  });
+
+  it('renders the plans route', () => {
+    renderWithProviders(<App />, {
+      route: '/planning/plans',
+      meal: mealFixture(),
+      planning: emptyPlanningState(),
+      plan: emptyPlanState(),
+    });
+    expect(screen.getByRole('heading', { name: '用款计划' })).toBeInTheDocument();
   });
 });
