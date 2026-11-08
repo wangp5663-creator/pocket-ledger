@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'HarmonyOS Sans SC App';
+  src: url('./assets/HarmonyOS_Sans_SC.woff2') format('woff2');
+  font-weight: 40 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #f3efe8;
   --surface: #fbf8f3;
@@ -72,7 +80,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'HarmonyOS Sans SC App', system-ui, -apple-system, sans-serif;
   font-size: calc(16px * var(--font-scale, 1));
   -webkit-font-smoothing: antialiased;
 }
