@@ -2,7 +2,7 @@
 
 - 日期：2026-11-08
 - 状态：待实施
-- 目标版本：v1.1.0（Android versionCode 3）
+- 目标版本：v1.1.0（Android versionCode 5）
 
 ## 1. 背景与问题
 
@@ -442,8 +442,8 @@ export function sortPlanItems(
 ## 9. 发布
 
 1. `npm run test:run` 全量通过。
-2. `package.json` 版本升到 `1.1.0`。
-3. Android `versionCode` 升到 `3`，`versionName` 升到 `1.1.0`。
+2. `package.json` 版本升到 `1.1.0`（当前 `1.0.3`）。
+3. Android `versionCode` 升到 `5`（当前 `4`），`versionName` 升到 `1.1.0`。
 4. `npm run build` → `npx cap sync android` → Gradle 签名打包，复制到 `Desktop`。
 5. 提交并推送，触发 GitHub Pages 部署。
 6. 验证线上包版本号、字体缩放、四个新子页路由。
