@@ -4,6 +4,7 @@ import {
   addMonths,
   daysInMonth,
   formatDateKey,
+  formatShortMonth,
   isValidDateKey,
   isValidMonthKey,
   lastNMonths,
@@ -53,5 +54,10 @@ describe('dates', () => {
 
   it('todayKey uses the provided date', () => {
     expect(todayKey(new Date(2026, 0, 2))).toBe('2026-01-02');
+  });
+
+  it('abbreviates months relative to the current year', () => {
+    expect(formatShortMonth('2026-11', '2026-11-08')).toBe('11月');
+    expect(formatShortMonth('2025-12', '2026-11-08')).toBe('2025年12月');
   });
 });

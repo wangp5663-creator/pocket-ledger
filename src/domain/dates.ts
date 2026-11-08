@@ -79,3 +79,8 @@ export function formatMonthLabel(month: string): string {
   const [year, monthNumber] = month.split('-').map(Number);
   return `${year}年${monthNumber}月`;
 }
+
+export function formatShortMonth(month: string, today: string): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return year === Number(today.slice(0, 4)) ? `${monthNumber}月` : `${year}年${monthNumber}月`;
+}
