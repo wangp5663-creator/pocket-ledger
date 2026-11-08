@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  completedEventGroups,
   computePlanningBalance,
   emptyPlanningState,
   eventProgress,
   eventTimeline,
+  firstSpendMonth,
+  isEventCompleted,
+  partitionEvents,
+  partitionInflows,
   planningMonthSummary,
   removeEvent,
   replenishPlanComparison,
@@ -156,5 +161,77 @@ describe('plan edge cases', () => {
       { month: '2026-12', planned: 3000, actual: 0, diff: -3000 },
     ]);
     expect(eventProgress(edge, 'e4').overPlanned).toBe(100);
+  });
+});
+
+describe('event partitions', () => {
+  const orderState: PlanningState = {
+    events: [
+      { id: 'sep', name: '九月事项', replenishPlan: [], createdAt: '2026-09-01T00:00:00.000Z' },
+      { id: 'nov', name: '十一月事项', replenishPlan: [], createdAt: '2026-11-01T00:00:00.000Z' },
+      { id: 'idle', name: '未支出事项', replenishPlan: [], createdAt: '2026-10-01T00:00:00.000Z' },
+    ],
+    spends: [
+      { id: 'sa', eventId: 'sep', date: '2026-09-05', amount: 100, createdAt },
+      { id: 'sb', eventId: 'nov', date: '2026-11-05', amount: 100, createdAt },
+    ],
+    replenishes: [],
+    inflows: [],
+  };
+
+  it('finds the first spend month', () => {
+    expect(firstSpendMonth(state, 'e1')).toBe('2026-11');
+    expect(firstSpendMonth(state, 'missing')).toBeUndefined();
+  });
+
+  it('completes only after spending and replenishing', () => {
+    expect(isEventCompleted(state, 'e1')).toBe(false);
+    expect(isEventCompleted(state, 'e2')).toBe(false);
+  });
+
+  it('sorts ongoing by spend month descending, then unspent last', () => {
+    expect(partitionEvents(orderState).ongoing.map((event) => event.id)).toEqual(['nov', 'sep', 'idle']);
+  });
+
+  it('groups completed events by first spend month', () => {
+    const completedState: PlanningState = {
+      events: [
+        { id: 'c1', name: '九月补完', replenishPlan: [], createdAt: '2026-09-01T00:00:00.000Z' },
+        { id: 'c2', name: '十月多补', replenishPlan: [], createdAt: '2026-10-01T00:00:00.000Z' },
+      ],
+      spends: [
+        { id: 'cs1', eventId: 'c1', date: '2026-09-03', amount: 100000, createdAt },
+        { id: 'cs2', eventId: 'c2', date: '2026-10-03', amount: 50000, createdAt },
+      ],
+      replenishes: [
+        { id: 'cr1', eventId: 'c1', date: '2026-11-05', amount: 100000, createdAt },
+        { id: 'cr2', eventId: 'c2', date: '2026-11-06', amount: 60000, createdAt },
+      ],
+      inflows: [],
+    };
+    expect(isEventCompleted(completedState, 'c1')).toBe(true);
+    expect(isEventCompleted(completedState, 'c2')).toBe(true);
+    const groups = completedEventGroups(completedState);
+    expect(groups.map((group) => group.month)).toEqual(['2026-10', '2026-09']);
+    expect(groups[0]).toMatchObject({ spends: 50000, replenishes: 60000 });
+    expect(groups[0].events.map((event) => event.id)).toEqual(['c2']);
+  });
+});
+
+describe('inflow partitions', () => {
+  it('keeps the current natural month separate from archived inflows', () => {
+    const inflowState: PlanningState = {
+      events: [],
+      spends: [],
+      replenishes: [],
+      inflows: [
+        { id: 'i1', date: '2026-11-02', amount: 100, createdAt },
+        { id: 'i2', date: '2026-10-15', amount: 200, createdAt },
+        { id: 'i3', date: '2026-12-01', amount: 300, createdAt },
+      ],
+    };
+    const result = partitionInflows(inflowState, '2026-11-08');
+    expect(result.currentMonth.map((entry) => entry.id)).toEqual(['i1']);
+    expect(result.archived.map((entry) => entry.id)).toEqual(['i3', 'i2']);
   });
 });

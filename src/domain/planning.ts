@@ -170,3 +170,102 @@ export function removeEvent(state: PlanningState, eventId: string): PlanningStat
     inflows: state.inflows,
   };
 }
+
+export function firstSpendMonth(state: PlanningState, eventId: string): string | undefined {
+  const spends = state.spends.filter((entry) => entry.eventId === eventId);
+  if (spends.length === 0) return undefined;
+  const earliest = spends.reduce((min, entry) => (entry.date < min ? entry.date : min), spends[0].date);
+  return monthOf(earliest);
+}
+
+export function isEventCompleted(state: PlanningState, eventId: string): boolean {
+  const progress = eventProgress(state, eventId);
+  return progress.spent > 0 && progress.replenished >= progress.spent;
+}
+
+export interface EventPartition {
+  ongoing: PlanningEvent[];
+  completed: PlanningEvent[];
+}
+
+export function partitionEvents(state: PlanningState): EventPartition {
+  const ongoing: PlanningEvent[] = [];
+  const completed: PlanningEvent[] = [];
+
+  for (const event of state.events) {
+    if (isEventCompleted(state, event.id)) {
+      completed.push(event);
+    } else {
+      ongoing.push(event);
+    }
+  }
+
+  ongoing.sort((a, b) => {
+    const monthA = firstSpendMonth(state, a.id);
+    const monthB = firstSpendMonth(state, b.id);
+    if (!monthA && !monthB) return b.createdAt.localeCompare(a.createdAt);
+    if (!monthA) return 1;
+    if (!monthB) return -1;
+    return monthA === monthB ? b.createdAt.localeCompare(a.createdAt) : monthB.localeCompare(monthA);
+  });
+
+  return { ongoing, completed };
+}
+
+export interface CompletedEventGroup {
+  month: string;
+  events: PlanningEvent[];
+  spends: number;
+  replenishes: number;
+}
+
+function lastReplenishDate(state: PlanningState, eventId: string): string {
+  const dates = state.replenishes
+    .filter((entry) => entry.eventId === eventId)
+    .map((entry) => entry.date)
+    .sort();
+  return dates[dates.length - 1] ?? '';
+}
+
+export function completedEventGroups(state: PlanningState): CompletedEventGroup[] {
+  const { completed } = partitionEvents(state);
+  const byMonth = new Map<string, PlanningEvent[]>();
+
+  for (const event of completed) {
+    const month = firstSpendMonth(state, event.id);
+    if (!month) continue;
+    const group = byMonth.get(month);
+    if (group) group.push(event);
+    else byMonth.set(month, [event]);
+  }
+
+  return [...byMonth.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([month, events]) => {
+      const sorted = [...events].sort((a, b) => {
+        const byDate = lastReplenishDate(state, b.id).localeCompare(lastReplenishDate(state, a.id));
+        return byDate !== 0 ? byDate : b.createdAt.localeCompare(a.createdAt);
+      });
+      return {
+        month,
+        events: sorted,
+        spends: sorted.reduce((total, event) => total + eventProgress(state, event.id).spent, 0),
+        replenishes: sorted.reduce((total, event) => total + eventProgress(state, event.id).replenished, 0),
+      };
+    });
+}
+
+export function partitionInflows(
+  state: PlanningState,
+  today: string,
+): { currentMonth: InflowEntry[]; archived: InflowEntry[] } {
+  const current = monthOf(today);
+  const sortDesc = (entries: InflowEntry[]) =>
+    [...entries].sort((a, b) =>
+      a.date === b.date ? b.createdAt.localeCompare(a.createdAt) : b.date.localeCompare(a.date),
+    );
+  return {
+    currentMonth: sortDesc(state.inflows.filter((entry) => monthOf(entry.date) === current)),
+    archived: sortDesc(state.inflows.filter((entry) => monthOf(entry.date) !== current)),
+  };
+}
