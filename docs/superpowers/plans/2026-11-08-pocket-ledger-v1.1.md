@@ -318,7 +318,7 @@ describe('MealRecordsPage', () => {
     await user.clear(input);
     await user.type(input, '20');
     await user.click(screen.getByRole('button', { name: '保存修改' }));
-    expect(await screen.findByText(/花费 ¥20\.00/)).toBeInTheDocument();
+    expect(await screen.findByText(/额度 ¥20\.00 · 花费 ¥20\.00/)).toBeInTheDocument();
   });
 
   it('confirms before deleting a record', async () => {
@@ -328,6 +328,29 @@ describe('MealRecordsPage', () => {
     expect(screen.getByText('删除这条记录？')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '确认删除' }));
     expect(screen.queryByRole('button', { name: `删除 ${formatDisplayDate(todayKey())}` })).not.toBeInTheDocument();
+  });
+
+  it('confirms before deleting when the phase would change', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<MealRecordsPage />, { meal: makeState(17000), route: '/meal/records' });
+    await user.click(screen.getByRole('button', { name: `删除 ${formatDisplayDate(todayKey())}` }));
+    expect(screen.getByText('删除会改变当前阶段，仍要删除吗？')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '确认删除' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认删除' }));
+    expect(screen.queryByRole('button', { name: `删除 ${formatDisplayDate(todayKey())}` })).not.toBeInTheDocument();
+  });
+
+  it('confirms before editing when the phase would change', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<MealRecordsPage />, { meal: makeState(17000), route: '/meal/records' });
+    await user.click(screen.getByRole('button', { name: `编辑 ${formatDisplayDate(todayKey())}` }));
+    const input = screen.getByLabelText('修改金额');
+    await user.clear(input);
+    await user.type(input, '10');
+    await user.click(screen.getByRole('button', { name: '保存修改' }));
+    expect(screen.getByText('这次修改会改变当前阶段，确认继续吗？')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认' }));
+    expect(await screen.findByText(/额度 ¥\d+\.\d{2} · 花费 ¥10\.00/)).toBeInTheDocument();
   });
 });
 ```
@@ -486,6 +509,7 @@ export function MealRecordsPage() {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [confirmTitle, setConfirmTitle] = useState('删除这条记录？');
   const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmLabel, setConfirmLabel] = useState('确认删除');
 
   const openEdit = (date: string) => {
     const record = state.records[date];
@@ -506,6 +530,7 @@ export function MealRecordsPage() {
     if (currentMealStatus(nextState, today).mode !== status.mode) {
       setConfirmTitle('确认修改？');
       setConfirmMessage('这次修改会改变当前阶段，确认继续吗？');
+      setConfirmLabel('确认');
       setPendingAction(() => action);
     } else {
       action();
@@ -518,6 +543,7 @@ export function MealRecordsPage() {
     const nextMode = currentMealStatus(nextState, today).mode;
     setConfirmTitle('删除这条记录？');
     setConfirmMessage(nextMode !== status.mode ? '删除会改变当前阶段，仍要删除吗？' : '删除后余额和阶段会重新计算。');
+    setConfirmLabel('确认删除');
     setPendingAction(() => () => {
       deleteRecord(date);
     });
@@ -574,7 +600,7 @@ export function MealRecordsPage() {
           open
           title={confirmTitle}
           message={confirmMessage}
-          confirmLabel="确认"
+          confirmLabel={confirmLabel}
           onCancel={() => setPendingAction(null)}
           onConfirm={() => {
             pendingAction();
@@ -1170,6 +1196,22 @@ describe('PlanningPage', () => {
     renderWithProviders(<PlanningPage />, { planning: emptyPlanningState() });
     expect(screen.getByRole('link', { name: /用款计划/ })).toHaveAttribute('href', '/planning/plans');
   });
+
+  it('defaults the entry sheet to the newest event', async () => {
+    const user = userEvent.setup();
+    const planning: PlanningState = {
+      events: [
+        { id: 'old', name: '旧事项', replenishPlan: [], createdAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'new', name: '新事项', replenishPlan: [], createdAt: '2026-11-01T00:00:00.000Z' },
+      ],
+      spends: [],
+      replenishes: [],
+      inflows: [],
+    };
+    renderWithProviders(<PlanningPage />, { planning });
+    await user.click(screen.getByRole('button', { name: '记一笔' }));
+    expect(screen.getByLabelText('关联事项')).toHaveValue('new');
+  });
 });
 ```
 
@@ -1256,6 +1298,7 @@ export function PlanningPage() {
   const summary = planningMonthSummary(state, monthOf(today), today);
   const { ongoing, completed } = partitionEvents(state);
   const { currentMonth: currentInflows, archived } = partitionInflows(state, today);
+  const events = [...state.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const [entryOpen, setEntryOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
   const [editingInflow, setEditingInflow] = useState<InflowEntry | null>(null);
@@ -1370,7 +1413,7 @@ export function PlanningPage() {
 
       <EntryLink to="/planning/plans" title="用款计划" detail="未来几个月的支出与回补安排" />
 
-      {entryOpen && <EntrySheet mode="create" events={state.events} onClose={() => setEntryOpen(false)} onSubmit={submitEntry} />}
+      {entryOpen && <EntrySheet mode="create" events={events} onClose={() => setEntryOpen(false)} onSubmit={submitEntry} />}
 
       {eventOpen && (
         <Sheet open title="新建事项" onClose={() => setEventOpen(false)}>
@@ -1387,7 +1430,7 @@ export function PlanningPage() {
             amount: editingInflow.amount,
             note: editingInflow.note,
           }}
-          events={state.events}
+          events={events}
           lockKind
           onClose={() => setEditingInflow(null)}
           onSubmit={(draft) => {
@@ -2421,15 +2464,10 @@ export function PlanForm({ initial, submitLabel, onSubmit }: PlanFormProps) {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const cents = parseYuanToCents(amount);
-    if (cents === null) {
-      setError('请输入大于 0 的金额');
-      return;
-    }
     const draft: PlanItemDraft = {
       spendMonth,
       title: title.trim(),
-      amount: cents,
+      amount: parseYuanToCents(amount) ?? 0,
       replenishMonth,
     };
     const message = validatePlanItemDraft(draft);
