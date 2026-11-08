@@ -5,6 +5,14 @@ import { buildMealTimeline, currentMealStatus, deriveRates } from '../../domain/
 import { centsToYuan, formatYuan, parseYuanToCents } from '../../domain/money';
 import { useMeal } from '../../state/MealStore';
 import { usePlanning } from '../../state/PlanningStore';
+import {
+  applyFontScale,
+  FONT_SCALE_LABELS,
+  FONT_SCALES,
+  loadFontScale,
+  saveFontScale,
+  type FontScaleValue,
+} from '../../state/uiPreferences';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MoneyInput } from '../components/MoneyInput';
 import { PeriodCalendar } from '../components/PeriodCalendar';
@@ -28,7 +36,14 @@ export function SettingsPage() {
   const [clearMealOpen, setClearMealOpen] = useState(false);
   const [clearPlanOpen, setClearPlanOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [fontScale, setFontScale] = useState<FontScaleValue>(() => loadFontScale());
   const alreadyRestoredToday = state.restores.some((restore) => restore.date === today);
+
+  const changeFontScale = (value: FontScaleValue) => {
+    setFontScale(value);
+    saveFontScale(value);
+    applyFontScale(value);
+  };
 
   const save = (event: FormEvent) => {
     event.preventDefault();
@@ -187,6 +202,27 @@ export function SettingsPage() {
         <button type="button" className="button button--danger-ghost" onClick={() => setClearPlanOpen(true)}>
           清空规划账数据
         </button>
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">显示</h2>
+        <p className="muted">调整后立即生效，并保存在本机。</p>
+        <div className="font-scale-options" role="group" aria-label="字体大小">
+          {FONT_SCALES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={`font-scale-option${fontScale === value ? ' is-active' : ''}`}
+              aria-pressed={fontScale === value}
+              onClick={() => changeFontScale(value)}
+            >
+              {FONT_SCALE_LABELS[value]}
+            </button>
+          ))}
+        </div>
+        <p className="muted">
+          字体跟随系统默认字体；华为主题商店的字体属于系统主题，网页内核（WebView）无法读取，所以这里只调整字号。
+        </p>
       </section>
 
       <section className="card">

@@ -5,7 +5,10 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { MealProvider } from './state/MealStore';
 import { PlanningProvider } from './state/PlanningStore';
+import { applyFontScale, loadFontScale } from './state/uiPreferences';
 import './ui/styles.css';
+
+applyFontScale(loadFontScale());
 
 registerSW({
   immediate: true,

@@ -25,6 +25,7 @@
   --warning-text: #8a6a3d;
   --shadow: 0 8px 24px rgba(31, 41, 51, 0.06);
   --radius: 16px;
+  --font-scale: 1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -72,6 +73,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, sans-serif;
+  font-size: calc(16px * var(--font-scale, 1));
   -webkit-font-smoothing: antialiased;
 }
 
@@ -94,18 +96,18 @@ a {
 }
 
 h1 {
-  font-size: 24px;
+  font-size: calc(24px * var(--font-scale, 1));
   margin: 0;
 }
 
 h2 {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale, 1));
   margin: 0;
 }
 
 .muted {
   color: var(--muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
 }
 
 .positive {
@@ -167,7 +169,7 @@ h2 {
 
 .card-title {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale, 1));
   font-weight: 600;
 }
 
@@ -191,13 +193,13 @@ h2 {
 }
 
 .balance-card__label {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   line-height: 1.4;
   opacity: 0.85;
 }
 
 .balance-card__amount {
-  font-size: clamp(27px, 8.5vw, 34px);
+  font-size: clamp(calc(27px * var(--font-scale, 1)), 8.5vw, calc(34px * var(--font-scale, 1)));
   line-height: 1.08;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -209,7 +211,7 @@ h2 {
 
 .balance-card__meta {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   line-height: 1.5;
   opacity: 0.85;
 }
@@ -220,7 +222,7 @@ h2 {
   padding: 2px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
 }
 
 .badge--danger {
@@ -247,7 +249,7 @@ h2 {
 
 .summary-grid strong {
   font-variant-numeric: tabular-nums;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale, 1));
 }
 
 .button {
@@ -295,6 +297,32 @@ h2 {
   border: 1px solid var(--danger);
 }
 
+.font-scale-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.font-scale-option {
+  flex: 1 1 64px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: calc(13px * var(--font-scale, 1));
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.font-scale-option.is-active {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  font-weight: 600;
+}
+
 .text-button {
   background: none;
   border: none;
@@ -304,7 +332,7 @@ h2 {
   align-items: center;
   color: var(--muted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
 }
 
 .text-button--danger {
@@ -317,7 +345,7 @@ h2 {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale, 1));
   line-height: 1;
   cursor: pointer;
   color: var(--muted);
@@ -333,7 +361,7 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   color: var(--muted);
 }
 
@@ -374,7 +402,7 @@ h2 {
 
 .money-input__prefix {
   color: var(--muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale, 1));
 }
 
 .money-input input {
@@ -389,7 +417,7 @@ h2 {
 
 .form-error {
   color: var(--danger);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   margin: 0;
 }
 
@@ -399,7 +427,7 @@ h2 {
   justify-content: space-between;
   padding: 12px 16px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale, 1));
   font-weight: 500;
 }
 
@@ -419,7 +447,7 @@ h2 {
   padding: 10px 16px;
   background: var(--danger);
   color: #fff;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
 }
 
 .storage-banner button {
@@ -458,12 +486,12 @@ h2 {
 
 .list-row__title {
   font-weight: 600;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale, 1));
 }
 
 .list-row__note {
   color: var(--muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -474,7 +502,7 @@ h2 {
   flex-direction: column;
   align-items: flex-end;
   gap: 1px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   font-variant-numeric: tabular-nums;
 }
 
@@ -507,7 +535,7 @@ h2 {
 }
 
 .event-card__meta {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   font-variant-numeric: tabular-nums;
 }
 
@@ -548,7 +576,7 @@ h2 {
   border-radius: 9px;
   color: var(--muted);
   cursor: pointer;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale, 1));
   font-weight: 500;
   min-height: 44px;
 }
@@ -635,7 +663,7 @@ h2 {
   gap: 8px;
   padding: 9px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   font-variant-numeric: tabular-nums;
   align-items: center;
 }
@@ -654,7 +682,7 @@ h2 {
 
 .table__head {
   color: var(--muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
 }
 
 .timeline {
@@ -752,7 +780,7 @@ h2 {
 }
 
 .bar-chart__label {
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale, 1));
   color: var(--muted);
 }
 
@@ -777,7 +805,7 @@ h2 {
   display: grid;
   place-items: center;
   background: var(--surface-soft);
-  font-size: 20px;
+  font-size: calc(20px * var(--font-scale, 1));
 }
 
 .onboarding {
@@ -801,7 +829,7 @@ h2 {
   margin: 0;
   color: var(--meal-primary);
   font-weight: 700;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   letter-spacing: 0.08em;
 }
 
@@ -876,7 +904,7 @@ h2 {
   align-items: center;
   gap: 2px;
   padding: 9px 4px 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale, 1));
   color: var(--muted);
   min-height: 56px;
   justify-content: center;
@@ -926,19 +954,19 @@ h2 {
 }
 
 .balance-card__mascot .mascot {
-  width: 116px;
+  width: clamp(96px, calc(116px / var(--font-scale, 1)), 128px);
 }
 
 .balance-card__message {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   font-weight: 600;
   line-height: 1.5;
 }
 
 .balance-card__note {
   margin: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   line-height: 1.5;
   opacity: 0.85;
 }
@@ -949,7 +977,7 @@ h2 {
   }
 
   .balance-card__mascot .mascot {
-    width: 104px;
+    width: clamp(88px, calc(104px / var(--font-scale, 1)), 112px);
   }
 }
 
@@ -1008,7 +1036,7 @@ h2 {
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.55);
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale, 1));
   line-height: 1.4;
   font-weight: 600;
 }
@@ -1025,7 +1053,7 @@ h2 {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale, 1));
   line-height: 1.4;
   opacity: 0.85;
 }
@@ -1068,14 +1096,14 @@ h2 {
 
 .period-meta {
   color: var(--muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
 }
 
 .mode-badge {
   display: inline-flex;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale, 1));
   background: var(--surface-soft);
   color: var(--text);
 }
@@ -1141,7 +1169,7 @@ h2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px 12px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
 }
 
 .period-stat__grid > div {
@@ -1170,7 +1198,7 @@ h2 {
 
 .period-calendar__weekday {
   text-align: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale, 1));
   color: var(--muted);
   padding: 4px 0;
 }
@@ -1180,7 +1208,7 @@ h2 {
   background: transparent;
   border-radius: 999px;
   min-height: 40px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   color: var(--text);
   cursor: pointer;
 }

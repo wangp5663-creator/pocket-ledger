@@ -161,7 +161,7 @@ export function MealPage() {
                 : `${formatYuan(status.dailyNormal)}/天 · 距保底 ${formatYuan(status.distanceToMinimum)}`}
             </span>
             <div className="balance-card__meta">
-              已记录 {recordedDays} 天 · 本周期 {formatDisplayDate(status.startDate)} 起
+              已记录 {recordedDays} 天 · {formatDisplayDate(status.startDate)} 起
             </div>
             <p className="balance-card__message">
               {status.mode === 'minimum'

@@ -81,4 +81,14 @@ describe('SettingsPage v2', () => {
     expect(screen.getByRole('dialog', { name: '自定义周期' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '保存周期' })).toBeInTheDocument();
   });
+
+  it('changes the font scale', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettingsPage />, { meal: mealFixture() });
+    await user.click(screen.getByRole('button', { name: '大' }));
+
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.1');
+    const saved = JSON.parse(localStorage.getItem('pocket-ledger.ui.v1') ?? '{}');
+    expect(saved.fontScale).toBe(1.1);
+  });
 });
