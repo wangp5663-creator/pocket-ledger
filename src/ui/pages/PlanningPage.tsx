@@ -30,6 +30,7 @@ export function PlanningPage() {
   const summary = planningMonthSummary(state, monthOf(today), today);
   const { ongoing, completed } = partitionEvents(state);
   const { currentMonth: currentInflows, archived } = partitionInflows(state, today);
+  const events = [...state.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const [entryOpen, setEntryOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
   const [editingInflow, setEditingInflow] = useState<InflowEntry | null>(null);
@@ -144,7 +145,7 @@ export function PlanningPage() {
 
       <EntryLink to="/planning/plans" title="用款计划" detail="未来几个月的支出与回补安排" />
 
-      {entryOpen && <EntrySheet mode="create" events={state.events} onClose={() => setEntryOpen(false)} onSubmit={submitEntry} />}
+      {entryOpen && <EntrySheet mode="create" events={events} onClose={() => setEntryOpen(false)} onSubmit={submitEntry} />}
 
       {eventOpen && (
         <Sheet open title="新建事项" onClose={() => setEventOpen(false)}>
@@ -161,7 +162,7 @@ export function PlanningPage() {
             amount: editingInflow.amount,
             note: editingInflow.note,
           }}
-          events={state.events}
+          events={events}
           lockKind
           onClose={() => setEditingInflow(null)}
           onSubmit={(draft) => {

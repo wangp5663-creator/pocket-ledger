@@ -87,4 +87,20 @@ describe('PlanningPage', () => {
     renderWithProviders(<PlanningPage />, { planning: emptyPlanningState() });
     expect(screen.getByRole('link', { name: /用款计划/ })).toHaveAttribute('href', '/planning/plans');
   });
+
+  it('defaults the entry sheet to the newest event', async () => {
+    const user = userEvent.setup();
+    const planning: PlanningState = {
+      events: [
+        { id: 'old', name: '旧事项', replenishPlan: [], createdAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'new', name: '新事项', replenishPlan: [], createdAt: '2026-11-01T00:00:00.000Z' },
+      ],
+      spends: [],
+      replenishes: [],
+      inflows: [],
+    };
+    renderWithProviders(<PlanningPage />, { planning });
+    await user.click(screen.getByRole('button', { name: '记一笔' }));
+    expect(screen.getByLabelText('关联事项')).toHaveValue('new');
+  });
 });
