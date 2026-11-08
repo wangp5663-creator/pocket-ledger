@@ -19,7 +19,7 @@ describe('jsonStorage', () => {
     localStorage.setItem('list', JSON.stringify({ nope: true }));
     expect(loadJson('list', (value): value is string[] => Array.isArray(value), () => [])).toEqual({
       value: [],
-      error: '本地数据格式异常，已重置',
+      error: '本机数据格式异常，已重置',
     });
   });
 
@@ -27,7 +27,7 @@ describe('jsonStorage', () => {
     localStorage.setItem('list', '{broken');
     expect(loadJson('list', (value): value is string[] => Array.isArray(value), () => [])).toEqual({
       value: [],
-      error: '无法读取本地数据',
+      error: '无法读取本机数据',
     });
   });
 
@@ -37,7 +37,7 @@ describe('jsonStorage', () => {
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
-    expect(saveJson('list', ['y'])).toBe('无法保存数据，请检查浏览器存储权限');
+    expect(saveJson('list', ['y'])).toBe('无法保存数据，请检查本机存储空间或应用权限');
     setItemSpy.mockRestore();
   });
 });

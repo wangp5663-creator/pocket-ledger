@@ -8,6 +8,7 @@ import {
   todayKey,
 } from './dates';
 import { createId } from './id';
+import { formatYuan } from './money';
 
 export type MealMode = 'normal' | 'minimum';
 
@@ -82,7 +83,7 @@ export function validateMealSettings(settings: MealSettingsV2): string | null {
   if (settings.monthlyMinimum >= settings.monthlyBudget) {
     return '月度保底必须小于月度预算';
   }
-  if (!settings.startDate) return '请选择起始日期';
+  if (!settings.startDate) return '请选择开始日期';
   if (
     settings.cycleStartDay !== undefined &&
     (!Number.isInteger(settings.cycleStartDay) || settings.cycleStartDay < 1 || settings.cycleStartDay > 31)
@@ -427,4 +428,40 @@ export function customizePeriod(
       restores: nextRestores,
     },
   };
+}
+
+export type MealDeficitHint =
+  | { kind: 'none' }
+  | { kind: 'ended'; over: number }
+  | { kind: 'impossible'; over: number; remainingOver: number }
+  | { kind: 'lessThanOne'; over: number; days: number }
+  | { kind: 'reduce'; over: number; days: number; perDayYuan: number };
+
+export function mealDeficitHint(status: MealStatus, today: string): MealDeficitHint {
+  if (status.balance >= 0) return { kind: 'none' };
+  const over = -status.balance;
+  const start = status.hasRecordToday ? addDays(today, 1) : today;
+  const days = status.endDate >= start ? listDates(start, status.endDate).length : 0;
+  if (days === 0) return { kind: 'ended', over };
+  const perDay = over / days;
+  if (perDay > status.dailyAllowance) {
+    return { kind: 'impossible', over, remainingOver: over - days * status.dailyAllowance };
+  }
+  if (perDay < 100) return { kind: 'lessThanOne', over, days };
+  return { kind: 'reduce', over, days, perDayYuan: Math.ceil(perDay / 100) };
+}
+
+export function formatMealDeficitHint(hint: MealDeficitHint): string | null {
+  switch (hint.kind) {
+    case 'none':
+      return null;
+    case 'ended':
+      return `本周期已结束，超支 ${formatYuan(hint.over)} 不会结转`;
+    case 'impossible':
+      return `即使每天不花，本周期仍将超支 ${formatYuan(hint.remainingOver)}`;
+    case 'lessThanOne':
+      return `超支 ${formatYuan(hint.over)}，剩 ${hint.days} 天，每天额度平均需减少不足 1 元`;
+    case 'reduce':
+      return `超支 ${formatYuan(hint.over)}，剩 ${hint.days} 天，每天额度至少需减少 ${formatYuan(hint.perDayYuan * 100)}`;
+  }
 }

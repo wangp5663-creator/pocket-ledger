@@ -6,6 +6,8 @@ import {
   customizePeriod,
   defaultMealStateV2,
   deriveRates,
+  formatMealDeficitHint,
+  mealDeficitHint,
   missingMealDates,
   normalizeMealState,
   removeMealRecord,
@@ -13,6 +15,7 @@ import {
   upsertMealRecord,
   validateMealSettings,
   type MealStateV2,
+  type MealStatus,
 } from './mealV2';
 
 const settings = { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: '2026-11-01' };
@@ -47,7 +50,7 @@ describe('rates and defaults', () => {
     expect(validateMealSettings(settings)).toBeNull();
     expect(validateMealSettings({ ...settings, monthlyBudget: 30000 })).toBe('月度保底必须小于月度预算');
     expect(validateMealSettings({ ...settings, monthlyMinimum: -1 })).toBe('月度保底不能为负数');
-    expect(validateMealSettings({ ...settings, startDate: '' })).toBe('请选择起始日期');
+    expect(validateMealSettings({ ...settings, startDate: '' })).toBe('请选择开始日期');
   });
 });
 
@@ -385,5 +388,66 @@ describe('manual restore', () => {
     const second = restoreMealNow(first.state, '2026-11-10');
     expect(second.error).toBe('今天已经恢复过');
     expect(second.state.restores.filter((event) => event.date === '2026-11-10')).toHaveLength(1);
+  });
+});
+
+function deficitStatus(overrides: Partial<MealStatus> = {}): MealStatus {
+  return {
+    mode: 'normal',
+    balance: 0,
+    dailyAllowance: 2000,
+    freeRemaining: 0,
+    distanceToMinimum: 0,
+    freeAllowance: 0,
+    dailyNormal: 2000,
+    dailyMinimum: 1500,
+    startDate: '2026-11-01',
+    endDate: '2026-11-08',
+    hasRecordToday: false,
+    ...overrides,
+  };
+}
+
+describe('meal deficit hint', () => {
+  it('does nothing for a non-negative balance', () => {
+    expect(mealDeficitHint(deficitStatus({ balance: 0 }), '2026-11-02')).toEqual({ kind: 'none' });
+    expect(formatMealDeficitHint({ kind: 'none' })).toBeNull();
+  });
+
+  it('includes today when today is not recorded', () => {
+    const hint = mealDeficitHint(deficitStatus({ balance: -12000 }), '2026-11-02');
+    expect(hint).toEqual({ kind: 'reduce', over: 12000, days: 7, perDayYuan: 18 });
+    expect(formatMealDeficitHint(hint)).toBe('超支 ¥120.00，剩 7 天，每天额度至少需减少 ¥18.00');
+  });
+
+  it('starts from tomorrow when today is recorded', () => {
+    const hint = mealDeficitHint(deficitStatus({ balance: -12000, hasRecordToday: true }), '2026-11-02');
+    expect(hint).toEqual({ kind: 'reduce', over: 12000, days: 6, perDayYuan: 20 });
+  });
+
+  it('reports less than one yuan', () => {
+    const hint = mealDeficitHint(deficitStatus({ balance: -50, endDate: '2026-11-04' }), '2026-11-02');
+    expect(hint).toEqual({ kind: 'lessThanOne', over: 50, days: 3 });
+    expect(formatMealDeficitHint(hint)).toBe('超支 ¥0.50，剩 3 天，每天额度平均需减少不足 1 元');
+  });
+
+  it('reports impossible when the daily reduction exceeds the allowance', () => {
+    const hint = mealDeficitHint(deficitStatus({ balance: -25000, endDate: '2026-11-06' }), '2026-11-02');
+    expect(hint).toEqual({ kind: 'impossible', over: 25000, remainingOver: 15000 });
+    expect(formatMealDeficitHint(hint)).toBe('即使每天不花，本周期仍将超支 ¥150.00');
+  });
+
+  it('treats equality with the allowance as achievable', () => {
+    const hint = mealDeficitHint(deficitStatus({ balance: -10000, endDate: '2026-11-06' }), '2026-11-02');
+    expect(hint).toEqual({ kind: 'reduce', over: 10000, days: 5, perDayYuan: 20 });
+  });
+
+  it('reports the end of the cycle', () => {
+    const hint = mealDeficitHint(
+      deficitStatus({ balance: -100, endDate: '2026-11-02', hasRecordToday: true }),
+      '2026-11-02',
+    );
+    expect(hint).toEqual({ kind: 'ended', over: 100 });
+    expect(formatMealDeficitHint(hint)).toBe('本周期已结束，超支 ¥1.00 不会结转');
   });
 });

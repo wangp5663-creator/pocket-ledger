@@ -1243,3 +1243,74 @@ h2 {
   color: var(--border);
   cursor: default;
 }
+
+.entry-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.entry-link__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entry-link__chevron {
+  color: var(--muted);
+  font-size: calc(20px * var(--font-scale, 1));
+  line-height: 1;
+}
+
+.table--plans .table__row {
+  grid-template-columns: minmax(72px, 0.9fr) minmax(120px, 1.8fr) minmax(88px, 1fr) minmax(72px, 0.9fr);
+}
+
+.table__row--button {
+  width: 100%;
+  appearance: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.table__ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.range-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.plan-timeline {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.plan-timeline__month {
+  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  font-size: calc(12px * var(--font-scale, 1));
+  font-variant-numeric: tabular-nums;
+}

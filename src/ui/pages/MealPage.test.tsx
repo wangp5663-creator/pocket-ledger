@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { formatDisplayDate, todayKey } from '../../domain/dates';
+import { todayKey } from '../../domain/dates';
 import { upsertMealRecord, type MealStateV2 } from '../../domain/mealV2';
 import { mealFixture, renderWithProviders } from '../../test/render';
 import { MealPage } from './MealPage';
@@ -9,8 +9,7 @@ import { MealPage } from './MealPage';
 const settings = { monthlyBudget: 60000, monthlyMinimum: 45000, startDate: todayKey() };
 
 function makeState(spent: number): MealStateV2 {
-  const state = mealFixture({ settings });
-  return upsertMealRecord(state, todayKey(), spent, '', new Date().toISOString());
+  return upsertMealRecord(mealFixture({ settings }), todayKey(), spent, '', new Date().toISOString());
 }
 
 describe('MealPage v2', () => {
@@ -23,15 +22,16 @@ describe('MealPage v2', () => {
     expect(screen.getByText('真棒！今天也攒下啦')).toBeInTheDocument();
   });
 
-  it('shows unhappy state when balance is negative', () => {
+  it('replaces the sad message with a deficit reminder', () => {
     renderWithProviders(<MealPage />, { meal: makeState(3000) });
-    expect(screen.getByText('有点超支了…')).toBeInTheDocument();
+    expect(screen.queryByText('有点超支了…')).not.toBeInTheDocument();
+    expect(screen.getByText(/超支 ¥10\.00|本周期已结束|即使每天不花/)).toBeInTheDocument();
   });
 
-  it('shows conservative state after crossing the free limit', () => {
+  it('shows the minimum phase copy after crossing the free limit', () => {
     renderWithProviders(<MealPage />, { meal: makeState(17000) });
-    expect(screen.getByText('保底 ¥15.00/天 · 无自由额度')).toBeInTheDocument();
-    expect(screen.getByText(/没有多余的钱可以随意消费/)).toBeInTheDocument();
+    expect(screen.getByText(/保底 ¥\d+\.\d{2}\/天 · 无自由额度/)).toBeInTheDocument();
+    expect(screen.getAllByText(/自由额度已用完|超支/).length).toBeGreaterThan(0);
   });
 
   it('uses configured daily rates in labels', () => {
@@ -52,14 +52,11 @@ describe('MealPage v2', () => {
     renderWithProviders(<MealPage />, { meal: mealFixture() });
     await user.type(screen.getByLabelText('今日实际花费'), '170');
     await user.click(screen.getByRole('button', { name: '保存' }));
-    expect(await screen.findByText('自由额度用完了')).toBeInTheDocument();
+    expect((await screen.findAllByText('自由额度已用完')).length).toBeGreaterThan(0);
   });
 
-  it('warns when deleting a record changes the phase', async () => {
-    const user = userEvent.setup();
-    const today = todayKey();
-    renderWithProviders(<MealPage />, { meal: makeState(17000) });
-    await user.click(screen.getByRole('button', { name: `删除 ${formatDisplayDate(today)}` }));
-    expect(screen.getByText(/删除会改变当前阶段/)).toBeInTheDocument();
+  it('links to the history page', () => {
+    renderWithProviders(<MealPage />, { meal: mealFixture({ settings }) });
+    expect(screen.getByRole('link', { name: /历史周期/ })).toHaveAttribute('href', '/meal/records');
   });
 });

@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { MealProvider } from './state/MealStore';
+import { PlanProvider } from './state/PlanStore';
 import { PlanningProvider } from './state/PlanningStore';
 import { applyFontScale, loadFontScale } from './state/uiPreferences';
 import './ui/styles.css';
@@ -24,9 +25,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MealProvider>
       <PlanningProvider>
-        <HashRouter>
-          <App />
-        </HashRouter>
+        <PlanProvider>
+          <HashRouter>
+            <App />
+          </HashRouter>
+        </PlanProvider>
       </PlanningProvider>
     </MealProvider>
   </StrictMode>,

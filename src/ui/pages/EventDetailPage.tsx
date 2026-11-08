@@ -41,7 +41,7 @@ export function EventDetailPage() {
       <div className="page">
         <EmptyState title="没有找到这个事项" />
         <Link className="button button--secondary" to="/planning">
-          返回规划账
+          返回补回账
         </Link>
       </div>
     );
@@ -98,7 +98,7 @@ export function EventDetailPage() {
     <div className="page">
       <div className="page-nav">
         <Link className="text-button" to="/planning">
-          ‹ 返回规划账
+          ‹ 返回补回账
         </Link>
         <div>
           <button type="button" className="text-button" aria-label="编辑事项" onClick={() => setEditEventOpen(true)}>
@@ -119,18 +119,18 @@ export function EventDetailPage() {
         <span className="balance-card__label">{event.name}</span>
         <strong className="balance-card__amount">
           {progress.spent === 0
-            ? '暂无支出'
+            ? '未支出'
             : progress.outstanding > 0
-              ? `待补 ${formatYuan(progress.outstanding)}`
+              ? `待补回 ${formatYuan(progress.outstanding)}`
               : progress.outstanding < 0
-                ? `多补 ${formatYuan(-progress.outstanding)}`
-                : '已补齐'}
+                ? `多补回 ${formatYuan(-progress.outstanding)}`
+                : '已补回'}
         </strong>
         {progress.overPlanned !== undefined && (
           <span className="badge badge--danger">超计划 {formatYuan(progress.overPlanned)}</span>
         )}
         <span className="balance-card__meta">
-          已花 {formatYuan(progress.spent)} · 已补 {formatYuan(progress.replenished)}
+          已支出 {formatYuan(progress.spent)} · 已补回 {formatYuan(progress.replenished)}
           {event.plannedTotal !== undefined ? ` · 计划 ${formatYuan(event.plannedTotal)}` : ''}
         </span>
       </section>
@@ -160,7 +160,7 @@ export function EventDetailPage() {
       </section>
 
       <section className="card">
-        <h2 className="card-title">来回补的过程</h2>
+        <h2 className="card-title">支出与补回记录</h2>
         {timeline.length === 0 ? (
           <p className="muted">还没有支出或补回记录。</p>
         ) : (
@@ -176,7 +176,7 @@ export function EventDetailPage() {
                     <span className="muted">{formatDisplayDate(item.date)}</span>
                   </div>
                   {item.note && <p className="muted">{item.note}</p>}
-                  <p className="muted">当时待补 {formatYuan(item.outstandingAfter)}</p>
+                  <p className="muted">当时待补回 {formatYuan(item.outstandingAfter)}</p>
                 </div>
                 <div className="timeline__actions">
                   <button
@@ -213,10 +213,10 @@ export function EventDetailPage() {
 
       <div className="action-row">
         <button type="button" className="button button--planning" onClick={() => openAddEntry('spend')}>
-          记支出
+          记录支出
         </button>
         <button type="button" className="button button--secondary" onClick={() => openAddEntry('replenish')}>
-          记补回
+          记录补回
         </button>
       </div>
 
@@ -234,8 +234,8 @@ export function EventDetailPage() {
       {deletingEntry && (
         <ConfirmDialog
           open
-          title="删除这笔流水？"
-          message="删除后规划账余额和事项进度会重新计算。"
+          title={deletingEntry.kind === 'spend' ? '删除这笔支出？' : '删除这笔补回？'}
+          message="删除后补回账余额和事项进度会重新计算。"
           onCancel={() => setDeletingEntry(null)}
           onConfirm={() => {
             deleteEntry(deletingEntry.kind, deletingEntry.id);

@@ -62,7 +62,7 @@ export function loadMealStateV2(): MealLoadResult {
   try {
     v2Raw = localStorage.getItem(MEAL_V2_STORAGE_KEY);
   } catch {
-    return { value: defaultMealStateV2(), error: '无法读取本地数据' };
+    return { value: defaultMealStateV2(), error: '无法读取本机数据' };
   }
 
   if (v2Raw !== null) {
@@ -73,7 +73,7 @@ export function loadMealStateV2(): MealLoadResult {
   try {
     v1Raw = localStorage.getItem('meal-allowance.v1');
   } catch {
-    return { value: defaultMealStateV2(), error: '无法读取本地数据' };
+    return { value: defaultMealStateV2(), error: '无法读取本机数据' };
   }
 
   if (v1Raw !== null) {
