@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { formatDisplayDate, formatMonthLabel, todayKey } from '../../domain/dates';
 import { buildMealTimeline } from '../../domain/mealV2';
-import { formatSignedYuan, formatYuan } from '../../domain/money';
+import { formatCompactYuan, formatSignedYuan, formatYuan } from '../../domain/money';
 import type { PlanningMonthSummary } from '../../domain/planning';
 import { planningMonthlySeries } from '../../domain/stats';
 import { useMeal } from '../../state/MealStore';
@@ -40,6 +40,7 @@ export function StatsPage() {
   const [ledger, setLedger] = useState<Ledger>('meal');
   const [count, setCount] = useState(6);
   const [planningMetric, setPlanningMetric] = useState<PlanningMetric>('net');
+  const [showDetails, setShowDetails] = useState(true);
   const today = todayKey();
   const periods = buildMealTimeline(mealState, today).filter((period) => period.startDate <= today);
   const displayPeriods = [...periods].reverse();
@@ -86,9 +87,18 @@ export function StatsPage() {
               data={chartData}
               color={ledger === 'meal' ? 'var(--meal-primary)' : 'var(--planning-primary)'}
               ariaLabel={ledger === 'meal' ? '餐补周期结余趋势' : `补回账月度${metric.label}趋势`}
+              formatValue={formatCompactYuan}
             />
           </section>
 
+          <div className="detail-toggle">
+            <button type="button" className="text-button" onClick={() => setShowDetails((value) => !value)}>
+              {showDetails ? '隐藏明细' : '显示明细'}
+            </button>
+          </div>
+
+          {showDetails && (
+            <>
           <section className={ledger === 'meal' ? 'card' : 'card table-wrap'}>
             {ledger === 'meal' ? (
               <div className="period-stats">
@@ -154,6 +164,10 @@ export function StatsPage() {
           </section>
 
           {ledger === 'planning' && (
+            <p className="muted table-hint">左右滑动查看完整月份数据</p>
+          )}
+
+          {ledger === 'planning' && (
             <button
               type="button"
               className="button button--secondary"
@@ -161,6 +175,8 @@ export function StatsPage() {
             >
               显示更早的月份
             </button>
+          )}
+            </>
           )}
         </>
       )}

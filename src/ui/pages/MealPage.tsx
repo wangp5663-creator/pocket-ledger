@@ -95,9 +95,17 @@ export function MealPage() {
               {formatYuan(status.balance)}
             </strong>
             <span className="status-pill">
-              {status.mode === 'minimum'
-                ? `保底 ${formatYuan(status.dailyMinimum)}/天 · 无自由额度`
-                : `正常 ${formatYuan(status.dailyNormal)}/天 · 距保底 ${formatYuan(status.distanceToMinimum)}`}
+              {status.mode === 'minimum' ? (
+                <>
+                  <span className="status-pill__part">保底 {formatYuan(status.dailyMinimum)}/天</span>
+                  <span className="status-pill__part">无自由额度</span>
+                </>
+              ) : (
+                <>
+                  <span className="status-pill__part">正常 {formatYuan(status.dailyNormal)}/天</span>
+                  <span className="status-pill__part">距保底 {formatYuan(status.distanceToMinimum)}</span>
+                </>
+              )}
             </span>
             <div className="balance-card__meta">
               已记录 {recordedDays} 天 · {formatDisplayDate(status.startDate)} 起

@@ -9,9 +9,15 @@ interface BarChartProps {
   data: BarDatum[];
   color?: string;
   ariaLabel?: string;
+  formatValue?: (value: number) => string;
 }
 
-export function BarChart({ data, color = 'var(--meal-primary)', ariaLabel = '月度趋势图' }: BarChartProps) {
+export function BarChart({
+  data,
+  color = 'var(--meal-primary)',
+  ariaLabel = '月度趋势图',
+  formatValue = (value) => String(value),
+}: BarChartProps) {
   if (data.length === 0) return null;
   const maxAbs = Math.max(...data.map((item) => Math.abs(item.value)), 1);
   const hasNegative = data.some((item) => item.value < 0);
@@ -33,6 +39,9 @@ export function BarChart({ data, color = 'var(--meal-primary)', ariaLabel = '月
         }
         return (
           <div className="bar-chart__item" key={`${item.label}-${index}`}>
+            <span className={`bar-chart__value ${negative ? 'negative' : 'positive'}`}>
+              {formatValue(item.value)}
+            </span>
             <div className="bar-chart__track">
               {hasNegative && <div className="bar-chart__axis" />}
               <div className={`bar-chart__bar${negative ? ' bar-chart__bar--negative' : ''}`} style={style} />

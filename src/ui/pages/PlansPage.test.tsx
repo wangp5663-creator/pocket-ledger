@@ -33,7 +33,7 @@ describe('PlansPage', () => {
     await user.type(screen.getByLabelText('金额'), '5000');
     await user.click(screen.getByRole('button', { name: '创建计划' }));
 
-    expect(await screen.findByText('换电脑')).toBeInTheDocument();
+    expect((await screen.findAllByText('换电脑')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('¥5000.00').length).toBeGreaterThan(0);
     expect(screen.getByText('近 3 个月')).toBeInTheDocument();
   });
@@ -52,14 +52,14 @@ describe('PlansPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<PlansPage />, { plan: fixture(), route: '/planning/plans' });
 
-    await user.click(screen.getByText('换电脑'));
+    await user.click(screen.getByRole('button', { name: /换电脑/ }));
     const amount = screen.getByLabelText('金额');
     await user.clear(amount);
     await user.type(amount, '6000');
     await user.click(screen.getByRole('button', { name: '保存修改' }));
     expect((await screen.findAllByText('¥6000.00')).length).toBeGreaterThan(0);
 
-    await user.click(screen.getByText('换电脑'));
+    await user.click(screen.getByRole('button', { name: /换电脑/ }));
     await user.click(screen.getByRole('button', { name: '删除' }));
     expect(screen.getByText('删除这条计划？')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '确认删除' }));
@@ -72,6 +72,8 @@ describe('PlansPage', () => {
     expect(screen.getByText('计划回补')).toBeInTheDocument();
     expect(screen.getByText('累计')).toBeInTheDocument();
     expect(screen.getAllByText(/净额/).length).toBeGreaterThan(0);
+    expect(screen.getByText('支出 ¥5000.00')).toBeInTheDocument();
+    expect(screen.getByText('回补 ¥5000.00')).toBeInTheDocument();
 
     const current = monthOf(todayKey());
     expect(

@@ -3,6 +3,7 @@ import {
   addDays,
   addMonths,
   daysInMonth,
+  formatCompactMonth,
   formatDateKey,
   formatShortMonth,
   isValidDateKey,
@@ -59,5 +60,10 @@ describe('dates', () => {
   it('abbreviates months relative to the current year', () => {
     expect(formatShortMonth('2026-11', '2026-11-08')).toBe('11月');
     expect(formatShortMonth('2025-12', '2026-11-08')).toBe('2025年12月');
+  });
+
+  it('abbreviates cross-year months for narrow tables', () => {
+    expect(formatCompactMonth('2026-11', '2026-11-08')).toBe('11月');
+    expect(formatCompactMonth('2027-01', '2026-11-08')).toBe('27年1月');
   });
 });
