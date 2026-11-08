@@ -30,7 +30,8 @@ describe('MealPage v2', () => {
 
   it('shows the minimum phase copy after crossing the free limit', () => {
     renderWithProviders(<MealPage />, { meal: makeState(17000) });
-    expect(screen.getByText(/保底 ¥\d+\.\d{2}\/天 · 无自由额度/)).toBeInTheDocument();
+    expect(screen.getByText(/保底 ¥\d+\.\d{2}\/天/)).toBeInTheDocument();
+    expect(screen.getByText('无自由额度')).toBeInTheDocument();
     expect(screen.getAllByText(/自由额度已用完|超支/).length).toBeGreaterThan(0);
   });
 

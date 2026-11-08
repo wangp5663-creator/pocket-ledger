@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatShortMonth, monthOf, todayKey } from '../../domain/dates';
+import { formatCompactMonth, formatShortMonth, monthOf, todayKey } from '../../domain/dates';
 import { formatSignedYuan, formatYuan } from '../../domain/money';
 import { planMonthBuckets, sortPlanItems, summarizePlanRange } from '../../domain/planItems';
 import type { PlanItem, PlanItemDraft } from '../../domain/planItems';
@@ -129,10 +129,10 @@ export function PlansPage() {
                   aria-label={`${formatShortMonth(item.spendMonth, today)} ${item.title} ${formatYuan(item.amount)} 回补 ${formatShortMonth(item.replenishMonth, today)}`}
                   onClick={() => setEditing(item)}
                 >
-                  <span>{formatShortMonth(item.spendMonth, today)}</span>
+                  <span>{formatCompactMonth(item.spendMonth, today)}</span>
                   <span className="table__ellipsis">{item.title}</span>
                   <span>{formatYuan(item.amount)}</span>
-                  <span>{formatShortMonth(item.replenishMonth, today)}</span>
+                  <span>{formatCompactMonth(item.replenishMonth, today)}</span>
                 </button>
               ))}
             </div>
@@ -140,18 +140,49 @@ export function PlansPage() {
 
           <section className="card">
             <h2 className="card-title">月度时间轴</h2>
+            <p className="muted plan-timeline__hint">横向为月份；每列左侧是事件，右侧是对应金额。</p>
             <div className="plan-timeline">
-              {buckets.map((bucket) => (
-                <div className="plan-timeline__month" key={bucket.month}>
-                  <strong>{formatShortMonth(bucket.month, today)}</strong>
-                  <span>支出 {formatYuan(bucket.spend)}</span>
-                  <span>回补 {formatYuan(bucket.replenish)}</span>
-                  <span className={bucket.net >= 0 ? 'positive' : 'negative'}>净额 {formatSignedYuan(bucket.net)}</span>
-                  <span className={bucket.cumulative >= 0 ? 'positive' : 'negative'}>
-                    累计 {formatSignedYuan(bucket.cumulative)}
-                  </span>
-                </div>
-              ))}
+              {buckets.map((bucket) => {
+                const monthSpends = items.filter((item) => item.spendMonth === bucket.month);
+                const monthReplenishes = items.filter((item) => item.replenishMonth === bucket.month);
+                return (
+                  <div className="plan-timeline__month" key={bucket.month}>
+                    <strong className="plan-timeline__month-title">
+                      {formatShortMonth(bucket.month, today)}
+                    </strong>
+                    <div className="plan-timeline__events">
+                      {monthSpends.map((item) => (
+                        <div className="plan-timeline__row" key={`spend-${item.id}`}>
+                          <span className="plan-timeline__event">
+                            <span className="plan-timeline__dot plan-timeline__dot--spend" aria-hidden="true" />
+                            {item.title}
+                          </span>
+                          <span className="plan-timeline__amount negative">支出 {formatYuan(item.amount)}</span>
+                        </div>
+                      ))}
+                      {monthReplenishes.map((item) => (
+                        <div className="plan-timeline__row" key={`replenish-${item.id}`}>
+                          <span className="plan-timeline__event">
+                            <span
+                              className="plan-timeline__dot plan-timeline__dot--replenish"
+                              aria-hidden="true"
+                            />
+                            {item.title}
+                          </span>
+                          <span className="plan-timeline__amount positive">回补 {formatYuan(item.amount)}</span>
+                        </div>
+                      ))}
+                      {monthSpends.length === 0 && monthReplenishes.length === 0 && (
+                        <span className="plan-timeline__empty">本月无安排</span>
+                      )}
+                    </div>
+                    <div className="plan-timeline__footer">
+                      <span>净额 {formatSignedYuan(bucket.net)}</span>
+                      <span>累计 {formatSignedYuan(bucket.cumulative)}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         </>

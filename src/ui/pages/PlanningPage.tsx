@@ -82,7 +82,7 @@ export function PlanningPage() {
         </button>
       </div>
 
-      <section className="section">
+      <section className="section section--debt">
         <div className="section-head">
           <h2>待补回</h2>
           <span className="muted">{ongoing.length} 个</span>
@@ -118,7 +118,7 @@ export function PlanningPage() {
         <EntryLink to="/planning/completed" title="已补回" detail={`${completed.length} 个`} />
       )}
 
-      <section className="section">
+      <section className="section section--inflow">
         <div className="section-head">
           <h2>本月汇入</h2>
           <span className="muted">{currentInflows.length} 笔</span>
@@ -143,7 +143,7 @@ export function PlanningPage() {
         <EntryLink to="/planning/inflows" title="汇入记录" detail={`${archived.length} 笔`} />
       )}
 
-      <EntryLink to="/planning/plans" title="用款计划" detail="未来几个月的支出与回补安排" />
+      <EntryLink to="/planning/plans" title="用款计划" detail="未来几个月的支出与回补安排" tone="plan" />
 
       {entryOpen && <EntrySheet mode="create" events={events} onClose={() => setEntryOpen(false)} onSubmit={submitEntry} />}
 

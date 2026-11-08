@@ -69,4 +69,19 @@ describe('StatsPage v2', () => {
     await user.click(screen.getByRole('tab', { name: '汇入' }));
     expect(screen.getByText('每月汇入')).toBeInTheDocument();
   });
+
+  it('hides and shows the detail section', async () => {
+    const user = userEvent.setup();
+    const today = todayKey();
+    const meal = mealFixture({
+      records: { [today]: { spent: 1500, updatedAt: '2026-11-01T00:00:00.000Z' } },
+    });
+    renderWithProviders(<StatsPage />, { meal, planning: emptyPlanningState(), plan: emptyPlanState() });
+
+    expect(screen.getByText('每日正常额度')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '隐藏明细' }));
+    expect(screen.queryByText('每日正常额度')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '显示明细' }));
+    expect(screen.getByText('每日正常额度')).toBeInTheDocument();
+  });
 });

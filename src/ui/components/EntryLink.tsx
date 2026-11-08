@@ -4,17 +4,20 @@ interface EntryLinkProps {
   to: string;
   title: string;
   detail?: string;
+  tone?: 'default' | 'plan';
 }
 
-export function EntryLink({ to, title, detail }: EntryLinkProps) {
+export function EntryLink({ to, title, detail, tone = 'default' }: EntryLinkProps) {
   return (
-    <Link className="card entry-link" to={to}>
+    <Link className={`card entry-link${tone === 'plan' ? ' entry-link--plan' : ''}`} to={to}>
       <span className="entry-link__text">
-        <strong>{title}</strong>
+        <strong>
+          {title}
+          <span className="entry-link__chevron" aria-hidden="true">
+            ›
+          </span>
+        </strong>
         {detail && <span className="muted">{detail}</span>}
-      </span>
-      <span className="entry-link__chevron" aria-hidden="true">
-        ›
       </span>
     </Link>
   );

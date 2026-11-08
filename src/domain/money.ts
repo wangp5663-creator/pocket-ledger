@@ -22,3 +22,16 @@ export function formatYuan(cents: Cents): string {
 export function formatSignedYuan(cents: Cents): string {
   return `${cents >= 0 ? '+' : '-'}${formatYuan(Math.abs(cents))}`;
 }
+
+export function formatCompactYuan(cents: Cents): string {
+  const sign = cents < 0 ? '-' : '';
+  const abs = Math.abs(cents);
+  if (abs >= 100000) {
+    const thousands = abs / 100000;
+    const text = thousands >= 10
+      ? String(Math.round(thousands))
+      : thousands.toFixed(1).replace(/\.0$/, '');
+    return `${sign}¥${text}k`;
+  }
+  return `${sign}¥${Math.round(abs / 100)}`;
+}
