@@ -151,27 +151,29 @@ export function MealPage() {
   return (
     <div className="page">
       <section className={`balance-card balance-card--${cardTone}`}>
-        <div style={{ maxWidth: '62%', position: 'relative', zIndex: 1 }}>
-          <span className="balance-card__label">当前可用余额</span>
-          <strong className={`balance-card__amount${status.balance < 0 ? ' is-negative' : ''}`}>{formatYuan(status.balance)}</strong>
-          <span className="status-pill">
-            {status.mode === 'minimum'
-              ? `保底 ${formatYuan(status.dailyMinimum)}/天 · 无自由额度`
-              : `${formatYuan(status.dailyNormal)}/天 · 距保底 ${formatYuan(status.distanceToMinimum)}`}
-          </span>
-          <div className="balance-card__meta">
-            已记录 {recordedDays} 天 · 本周期 {formatDisplayDate(status.startDate)} 起
+        <div className="balance-card__body">
+          <div className="balance-card__text">
+            <span className="balance-card__label">当前可用余额</span>
+            <strong className={`balance-card__amount${status.balance < 0 ? ' is-negative' : ''}`}>{formatYuan(status.balance)}</strong>
+            <span className="status-pill">
+              {status.mode === 'minimum'
+                ? `保底 ${formatYuan(status.dailyMinimum)}/天 · 无自由额度`
+                : `${formatYuan(status.dailyNormal)}/天 · 距保底 ${formatYuan(status.distanceToMinimum)}`}
+            </span>
+            <div className="balance-card__meta">
+              已记录 {recordedDays} 天 · 本周期 {formatDisplayDate(status.startDate)} 起
+            </div>
+            <p className="balance-card__message">
+              {status.mode === 'minimum'
+                ? '没有多余的钱可以随意消费'
+                : status.balance < 0
+                  ? '有点超支了…'
+                  : '真棒！今天也攒下啦'}
+            </p>
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: 12, fontWeight: 600 }}>
-            {status.mode === 'minimum'
-              ? '没有多余的钱可以随意消费'
-              : status.balance < 0
-                ? '有点超支了…'
-                : '真棒！今天也攒下啦'}
-          </p>
-        </div>
-        <div style={{ position: 'absolute', right: 12, bottom: 0 }}>
-          <BeanMascot state={mascotState} />
+          <div className="balance-card__mascot">
+            <BeanMascot state={mascotState} />
+          </div>
         </div>
         {status.mode === 'normal' ? (
           <div className="free-quota">
@@ -194,7 +196,7 @@ export function MealPage() {
             </div>
           </div>
         ) : (
-          <p style={{ margin: '18px 0 0', fontSize: 12, opacity: 0.85 }}>
+          <p className="balance-card__note">
             自由额度已用完，接下来每天按 {formatYuan(status.dailyMinimum)} 计算。
           </p>
         )}

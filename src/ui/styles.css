@@ -71,7 +71,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -173,11 +173,11 @@ h2 {
 
 .balance-card {
   border-radius: 20px;
-  padding: 22px;
+  padding: 20px 20px 18px;
   color: #fff;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
 }
 
 .balance-card--green {
@@ -192,11 +192,13 @@ h2 {
 
 .balance-card__label {
   font-size: 13px;
+  line-height: 1.4;
   opacity: 0.85;
 }
 
 .balance-card__amount {
-  font-size: 34px;
+  font-size: clamp(27px, 8.5vw, 34px);
+  line-height: 1.08;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
@@ -206,7 +208,9 @@ h2 {
 }
 
 .balance-card__meta {
+  margin-top: 2px;
   font-size: 12px;
+  line-height: 1.5;
   opacity: 0.85;
 }
 
@@ -900,6 +904,55 @@ h2 {
   overflow: hidden;
 }
 
+.balance-card__body {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.balance-card__text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.balance-card__mascot {
+  flex-shrink: 0;
+  margin-right: -6px;
+  margin-bottom: -6px;
+}
+
+.balance-card__mascot .mascot {
+  width: 116px;
+}
+
+.balance-card__message {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.balance-card__note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+@media (max-width: 360px) {
+  .balance-card {
+    padding: 18px 16px 16px;
+  }
+
+  .balance-card__mascot .mascot {
+    width: 104px;
+  }
+}
+
 .balance-card--indigo {
   background: linear-gradient(135deg, #bcc9d3, #a7b6c2);
   box-shadow: 0 16px 32px rgba(127, 147, 163, 0.2);
@@ -950,25 +1003,30 @@ h2 {
 .status-pill {
   display: inline-flex;
   align-self: flex-start;
+  max-width: 100%;
+  margin-top: 2px;
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.55);
   font-size: 11px;
+  line-height: 1.4;
   font-weight: 600;
 }
 
 .free-quota {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: 58%;
-  margin-top: 18px;
+  gap: 6px;
+  width: 100%;
+  margin-top: 2px;
 }
 
 .free-quota__label {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  gap: 12px;
+  font-size: 11px;
+  line-height: 1.4;
   opacity: 0.85;
 }
 
