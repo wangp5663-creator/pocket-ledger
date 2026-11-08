@@ -191,7 +191,7 @@ export function SettingsPage() {
 
       <section className="card">
         <h2 className="card-title">关于</h2>
-        <p className="muted">小账本 v0.2.0 · PWA · 数据版本 v2</p>
+        <p className="muted">小账本 v{__APP_VERSION__} · 数据版本 v2</p>
       </section>
 
       {restoreOpen && (

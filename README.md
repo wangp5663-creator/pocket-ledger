@@ -27,6 +27,32 @@ npm run dev -- --host
 
 手机浏览器打开终端输出的局域网地址即可。
 
+## 安卓 APK（自用，不上架）
+
+网页版继续用于测试和预览，APK 作为日常使用。
+
+构建环境（本机，装在 D 盘）：
+
+- JDK 21：`D:/Android/jdk-21.0.2`
+- Android SDK：`D:/Android/sdk`
+- Gradle 缓存：`D:/Android/gradle-home`
+
+```bash
+export JAVA_HOME=/d/Android/jdk-21.0.2
+export ANDROID_HOME=/d/Android/sdk
+export GRADLE_USER_HOME=/d/Android/gradle-home
+npm run app:sync
+cd android && ./gradlew.bat assembleRelease
+```
+
+产物：`android/app/build/outputs/apk/release/app-release.apk`
+
+- 第一次出包约 5–8 分钟，之后增量构建通常 1 分钟内
+- 签名文件在 `D:/Android/keys/pocket-ledger-release.jks`，密码在同目录 `README.txt`；`android/keystore.properties` 只保存在本地，不提交
+- 签名文件丢失后无法覆盖升级，只能卸载重装（数据会丢），务必和密码一起备份
+- 更新：把 `android/app/build.gradle` 里的 `versionCode` 加一，重新构建后覆盖安装，数据保留
+- APK 没有网络权限，完全离线运行
+
 ## 部署到 GitHub Pages
 
 1. 在 GitHub 创建仓库 `pocket-ledger`（公开或私有均可，Pages 需要公开或 Pro）。
@@ -46,4 +72,5 @@ Chrome 打开上述地址 → 右上角菜单 → **添加到主屏幕**。之�
 
 ## 数据说明
 
-所有数据保存在本机浏览器的 localStorage 中，清除浏览器数据或卸载浏览器会丢失记录。
+- 网页版数据保存在浏览器 localStorage 中，清除浏览器数据会丢失记录
+- APK 数据保存在应用自己的 WebView 中，与网页版互相独立；卸载应用或清除应用数据会丢失记录

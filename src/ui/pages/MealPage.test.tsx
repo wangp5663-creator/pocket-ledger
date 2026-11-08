@@ -39,7 +39,7 @@ describe('MealPage v2', () => {
     const state = upsertMealRecord(
       mealFixture({ settings: customSettings }),
       todayKey(),
-      30000,
+      1000,
       '',
       new Date().toISOString(),
     );
