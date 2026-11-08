@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatDisplayDate, monthOf, todayKey } from '../../domain/dates';
+import { formatShortMonth, monthOf, todayKey } from '../../domain/dates';
 import { formatSignedYuan, formatYuan } from '../../domain/money';
-import { computePlanningBalance, eventProgress, planningMonthSummary } from '../../domain/planning';
+import {
+  computePlanningBalance,
+  eventProgress,
+  firstSpendMonth,
+  partitionEvents,
+  partitionInflows,
+  planningMonthSummary,
+} from '../../domain/planning';
 import type { InflowEntry } from '../../domain/planning';
 import { usePlanning } from '../../state/PlanningStore';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
+import { EntryLink } from '../components/EntryLink';
 import { EntrySheet } from '../components/EntrySheet';
 import type { EntryDraft } from '../components/EntrySheet';
 import { EventForm } from '../components/EventForm';
 import type { EventDraft } from '../components/EventForm';
+import { InflowRow } from '../components/InflowRow';
 import { ProgressBar } from '../components/ProgressBar';
 import { Sheet } from '../components/Sheet';
 
@@ -19,10 +28,8 @@ export function PlanningPage() {
   const today = todayKey();
   const balance = computePlanningBalance(state);
   const summary = planningMonthSummary(state, monthOf(today), today);
-  const events = [...state.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const inflows = [...state.inflows].sort((a, b) =>
-    a.date === b.date ? b.createdAt.localeCompare(a.createdAt) : b.date.localeCompare(a.date),
-  );
+  const { ongoing, completed } = partitionEvents(state);
+  const { currentMonth: currentInflows, archived } = partitionInflows(state, today);
   const [entryOpen, setEntryOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
   const [editingInflow, setEditingInflow] = useState<InflowEntry | null>(null);
@@ -41,7 +48,7 @@ export function PlanningPage() {
   return (
     <div className="page">
       <section className="balance-card balance-card--indigo">
-        <span className="balance-card__label">规划账余额</span>
+        <span className="balance-card__label">补回账余额</span>
         <strong className={`balance-card__amount${balance < 0 ? ' is-negative' : ''}`}>{formatYuan(balance)}</strong>
         <span className="balance-card__meta">本月净变化 {formatSignedYuan(summary.net)}</span>
       </section>
@@ -76,30 +83,29 @@ export function PlanningPage() {
 
       <section className="section">
         <div className="section-head">
-          <h2>事项</h2>
-          <span className="muted">{events.length} 个</span>
+          <h2>待补回</h2>
+          <span className="muted">{ongoing.length} 个</span>
         </div>
-        {events.length === 0 ? (
-          <EmptyState title="还没有事项" hint="新建一个事项，记录花掉和补回的过程。" />
+        {ongoing.length === 0 ? (
+          <EmptyState title="还没有待补回事项" hint="新建一个事项，记录支出和补回的过程。" />
         ) : (
-          events.map((event) => {
+          ongoing.map((event) => {
             const progress = eventProgress(state, event.id);
+            const month = firstSpendMonth(state, event.id);
             const percent = progress.spent > 0 ? (progress.replenished / progress.spent) * 100 : 0;
             return (
               <Link to={`/planning/events/${event.id}`} className="card event-card" key={event.id}>
                 <div className="event-card__head">
                   <strong>{event.name}</strong>
-                  {progress.outstanding > 0 && <span className="badge">待补 {formatYuan(progress.outstanding)}</span>}
+                  <span className="badge">{month ? formatShortMonth(month, today) : '未支出'}</span>
+                  {progress.outstanding > 0 && <span className="badge">待补回 {formatYuan(progress.outstanding)}</span>}
                   {progress.outstanding < 0 && (
-                    <span className="badge badge--success">多补 {formatYuan(-progress.outstanding)}</span>
-                  )}
-                  {progress.outstanding === 0 && progress.spent > 0 && (
-                    <span className="badge badge--success">已补齐</span>
+                    <span className="badge badge--success">多补回 {formatYuan(-progress.outstanding)}</span>
                   )}
                 </div>
                 <ProgressBar value={percent} tone="indigo" />
                 <div className="event-card__meta muted">
-                  已花 {formatYuan(progress.spent)} · 已补 {formatYuan(progress.replenished)}
+                  已支出 {formatYuan(progress.spent)} · 已补回 {formatYuan(progress.replenished)}
                 </div>
               </Link>
             );
@@ -107,50 +113,38 @@ export function PlanningPage() {
         )}
       </section>
 
+      {completed.length > 0 && (
+        <EntryLink to="/planning/completed" title="已补回" detail={`${completed.length} 个`} />
+      )}
+
       <section className="section">
         <div className="section-head">
-          <h2>最近汇入</h2>
-          <span className="muted">{inflows.length} 笔</span>
+          <h2>本月汇入</h2>
+          <span className="muted">{currentInflows.length} 笔</span>
         </div>
-        {inflows.length === 0 ? (
-          <EmptyState title="还没有汇入" hint="工资、红包等额外资金可以记在这里。" />
+        {currentInflows.length === 0 ? (
+          <EmptyState title="本月还没有汇入" hint="工资、红包等额外资金可以记在这里。" />
         ) : (
           <div className="card list">
-            {inflows.map((entry) => (
-              <div className="list-row" key={entry.id}>
-                <div className="list-row__main">
-                  <span className="list-row__title">{formatDisplayDate(entry.date)}</span>
-                  {entry.note && <span className="list-row__note">{entry.note}</span>}
-                </div>
-                <div className="list-row__amounts">
-                  <span className="positive">+{formatYuan(entry.amount)}</span>
-                </div>
-                <div className="list-row__actions">
-                  <button type="button" className="text-button" onClick={() => setEditingInflow(entry)}>
-                    编辑
-                  </button>
-                  <button
-                    type="button"
-                    className="text-button text-button--danger"
-                    onClick={() => setDeletingInflow(entry)}
-                  >
-                    删除
-                  </button>
-                </div>
-              </div>
+            {currentInflows.map((entry) => (
+              <InflowRow
+                key={entry.id}
+                entry={entry}
+                onEdit={() => setEditingInflow(entry)}
+                onDelete={() => setDeletingInflow(entry)}
+              />
             ))}
           </div>
         )}
       </section>
 
-      {entryOpen && (
-        <EntrySheet
-          mode="create"
-          events={events}
-          onClose={() => setEntryOpen(false)}
-          onSubmit={submitEntry}
-        />
+      {archived.length > 0 && (
+        <EntryLink to="/planning/inflows" title="汇入记录" detail={`${archived.length} 笔`} />
       )}
+
+      <EntryLink to="/planning/plans" title="用款计划" detail="未来几个月的支出与回补安排" />
+
+      {entryOpen && <EntrySheet mode="create" events={state.events} onClose={() => setEntryOpen(false)} onSubmit={submitEntry} />}
 
       {eventOpen && (
         <Sheet open title="新建事项" onClose={() => setEventOpen(false)}>
@@ -167,7 +161,7 @@ export function PlanningPage() {
             amount: editingInflow.amount,
             note: editingInflow.note,
           }}
-          events={events}
+          events={state.events}
           lockKind
           onClose={() => setEditingInflow(null)}
           onSubmit={(draft) => {
@@ -185,7 +179,7 @@ export function PlanningPage() {
         <ConfirmDialog
           open
           title="删除这笔汇入？"
-          message="删除后规划账余额会重新计算。"
+          message="删除后补回账余额会重新计算。"
           onCancel={() => setDeletingInflow(null)}
           onConfirm={() => {
             deleteEntry('inflow', deletingInflow.id);
