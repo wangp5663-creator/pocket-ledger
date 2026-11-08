@@ -30,7 +30,7 @@ export function Onboarding() {
       return;
     }
     if (!startDate || startDate > todayKey()) {
-      setError('请选择不晚于今天的起始日期');
+      setError('请选择不晚于今天的开始日期');
       return;
     }
     const message = updateSettings({
@@ -51,7 +51,7 @@ export function Onboarding() {
       <div className="onboarding__hero">
         <p className="eyebrow">小账本</p>
         <h1>把每天的结余，攒成一笔可用的钱</h1>
-        <p className="muted">先设置月度预算、保底和起始日期。</p>
+        <p className="muted">先设置月度预算、保底和开始日期。</p>
       </div>
       <form className="card form" onSubmit={submit}>
         <label className="field">
@@ -78,14 +78,14 @@ export function Onboarding() {
         </label>
         {rates && (
           <p className="muted" aria-live="polite">
-            自由额度 {formatYuan(rates.freeAllowance)} · 日均正常 {formatYuan(rates.dailyNormal)} / 日均保底 {formatYuan(rates.dailyMinimum)}
+            自由额度 {formatYuan(rates.freeAllowance)} · 正常 {formatYuan(rates.dailyNormal)}/天 · 保底 {formatYuan(rates.dailyMinimum)}/天
           </p>
         )}
         {budgetCents !== null && minimumCents !== null && minimumCents >= budgetCents && (
           <p className="form-error" role="alert">月度保底必须小于月度预算</p>
         )}
         <label className="field">
-          <span>起始日期</span>
+          <span>开始日期</span>
           <input
             type="date"
             value={startDate}
@@ -95,13 +95,13 @@ export function Onboarding() {
               setStartDate(event.target.value);
               setError('');
             }}
-            aria-label="起始日期"
+            aria-label="开始日期"
           />
         </label>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button className="button button--primary" type="submit">开始记账</button>
       </form>
-      <p className="onboarding__hint muted">数据只保存在这台手机上。</p>
+      <p className="onboarding__hint muted">数据只保存在本机。</p>
     </div>
   );
 }

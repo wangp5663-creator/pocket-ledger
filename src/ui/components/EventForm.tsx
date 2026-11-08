@@ -54,7 +54,7 @@ export function EventForm({ initial, submitLabel, onSubmit }: EventFormProps) {
     if (plannedTotal.trim()) {
       const cents = parseYuanToCents(plannedTotal);
       if (cents === null || cents <= 0) {
-        setError('计划总花费必须是大于 0 的有效金额');
+        setError('请输入大于 0 的计划总支出');
         return;
       }
       planned = cents;
@@ -96,8 +96,8 @@ export function EventForm({ initial, submitLabel, onSubmit }: EventFormProps) {
         />
       </label>
       <label className="field">
-        <span>计划总花费（可选）</span>
-        <MoneyInput value={plannedTotal} onChange={setPlannedTotal} ariaLabel="计划总花费" />
+        <span>计划总支出（可选）</span>
+        <MoneyInput value={plannedTotal} onChange={setPlannedTotal} ariaLabel="计划总支出" />
       </label>
       <label className="field">
         <span>备注（可选）</span>

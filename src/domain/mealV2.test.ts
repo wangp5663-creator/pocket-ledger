@@ -50,7 +50,7 @@ describe('rates and defaults', () => {
     expect(validateMealSettings(settings)).toBeNull();
     expect(validateMealSettings({ ...settings, monthlyBudget: 30000 })).toBe('月度保底必须小于月度预算');
     expect(validateMealSettings({ ...settings, monthlyMinimum: -1 })).toBe('月度保底不能为负数');
-    expect(validateMealSettings({ ...settings, startDate: '' })).toBe('请选择起始日期');
+    expect(validateMealSettings({ ...settings, startDate: '' })).toBe('请选择开始日期');
   });
 });
 

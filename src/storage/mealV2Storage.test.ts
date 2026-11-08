@@ -50,7 +50,7 @@ describe('mealV2Storage', () => {
       }),
     );
     const result = loadMealStateV2();
-    expect(result.error).toBe('无法读取本地数据');
+    expect(result.error).toBe('无法读取本机数据');
     expect(result.migrated).toBeUndefined();
     expect(localStorage.getItem(MEAL_V2_STORAGE_KEY)).toBe('{broken');
   });
@@ -58,7 +58,7 @@ describe('mealV2Storage', () => {
   it('surfaces corrupt v1 data when no v2 exists', () => {
     localStorage.setItem('meal-allowance.v1', '{broken');
     const result = loadMealStateV2();
-    expect(result.error).toBe('无法读取本地数据');
+    expect(result.error).toBe('无法读取本机数据');
     expect(result.value.settings.monthlyBudget).toBe(60000);
   });
 

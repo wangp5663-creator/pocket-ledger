@@ -33,14 +33,14 @@ describe('EventDetailPage', () => {
       { route: '/planning/events/e1', planning },
     );
 
-    expect(screen.getByText('待补 ¥3000.00')).toBeInTheDocument();
+    expect(screen.getByText('待补回 ¥3000.00')).toBeInTheDocument();
     expect(screen.getByText('补回计划 vs 实际')).toBeInTheDocument();
     expect(screen.getByText('2026年12月')).toBeInTheDocument();
-    expect(screen.getByText('当时待补 ¥5000.00')).toBeInTheDocument();
-    expect(screen.getByText('当时待补 ¥3000.00')).toBeInTheDocument();
+    expect(screen.getByText('当时待补回 ¥5000.00')).toBeInTheDocument();
+    expect(screen.getByText('当时待补回 ¥3000.00')).toBeInTheDocument();
   });
 
-  it('shows 暂无支出 for an event without spending', () => {
+  it('shows 未支出 for an event without spending', () => {
     const zero: PlanningState = {
       events: [planning.events[0]],
       spends: [],
@@ -54,7 +54,7 @@ describe('EventDetailPage', () => {
       { route: '/planning/events/e1', planning: zero },
     );
 
-    expect(screen.getByText('暂无支出')).toBeInTheDocument();
-    expect(screen.queryByText('已补齐')).not.toBeInTheDocument();
+    expect(screen.getByText('未支出')).toBeInTheDocument();
+    expect(screen.queryByText('已补回')).not.toBeInTheDocument();
   });
 });

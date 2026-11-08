@@ -262,7 +262,7 @@ export function SettingsPage() {
         <ConfirmDialog
           open
           title="清空餐补数据？"
-          message="将删除所有餐补记录与周期，并把起始日期重置为今天；预算和保底保留。"
+          message="将删除所有餐补记录与周期，并把开始日期重置为今天；预算和保底保留。"
           confirmLabel="确认清空"
           onCancel={() => setClearMealOpen(false)}
           onConfirm={() => {

@@ -16,10 +16,10 @@ export function loadJson<T>(
     const raw = localStorage.getItem(key);
     if (!raw) return { value: createDefault() };
     const parsed: unknown = JSON.parse(raw);
-    if (!validate(parsed)) return { value: createDefault(), error: '本地数据格式异常，已重置' };
+    if (!validate(parsed)) return { value: createDefault(), error: '本机数据格式异常，已重置' };
     return { value: parsed };
   } catch {
-    return { value: createDefault(), error: '无法读取本地数据' };
+    return { value: createDefault(), error: '无法读取本机数据' };
   }
 }
 
@@ -28,6 +28,6 @@ export function saveJson<T>(key: string, value: T): string | null {
     localStorage.setItem(key, JSON.stringify(value));
     return null;
   } catch {
-    return '无法保存数据，请检查浏览器存储权限';
+    return '无法保存数据，请检查本机存储空间或应用权限';
   }
 }

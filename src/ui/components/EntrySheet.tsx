@@ -47,7 +47,7 @@ export function EntrySheet({ mode, initial, events, lockKind = false, onClose, o
     event.preventDefault();
     const cents = parseYuanToCents(amount);
     if (cents === null || cents <= 0) {
-      setError('请输入大于 0 的有效金额');
+      setError('请输入大于 0 的金额');
       return;
     }
     if (!date || date > today) {
@@ -68,7 +68,7 @@ export function EntrySheet({ mode, initial, events, lockKind = false, onClose, o
   };
 
   return (
-    <Sheet open title={mode === 'create' ? '记一笔' : '修改流水'} onClose={onClose}>
+    <Sheet open title={mode === 'create' ? '记一笔' : '修改记录'} onClose={onClose}>
       <form className="form" onSubmit={submit}>
         {!lockKind && <SegmentedControl options={KIND_OPTIONS} value={kind} onChange={setKind} />}
         {needsEvent && (

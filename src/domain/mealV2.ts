@@ -83,7 +83,7 @@ export function validateMealSettings(settings: MealSettingsV2): string | null {
   if (settings.monthlyMinimum >= settings.monthlyBudget) {
     return '月度保底必须小于月度预算';
   }
-  if (!settings.startDate) return '请选择起始日期';
+  if (!settings.startDate) return '请选择开始日期';
   if (
     settings.cycleStartDay !== undefined &&
     (!Number.isInteger(settings.cycleStartDay) || settings.cycleStartDay < 1 || settings.cycleStartDay > 31)
