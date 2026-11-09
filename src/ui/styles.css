@@ -1452,6 +1452,11 @@ h2 {
   gap: 4px;
 }
 
+.chart-subtitle {
+  margin: -6px 0 0;
+  font-size: calc(11px * var(--font-scale, 1));
+}
+
 .detail-toggle {
   display: flex;
   justify-content: flex-end;

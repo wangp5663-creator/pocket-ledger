@@ -16,13 +16,18 @@ describe('StatsPage v2', () => {
     });
     renderWithProviders(<StatsPage />, { meal, planning: emptyPlanningState(), plan: emptyPlanState() });
 
-    expect(screen.getByText('每周期结余')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '每周期结余' })).toBeInTheDocument();
     expect(screen.getByText('每日正常额度')).toBeInTheDocument();
     expect(screen.getAllByText(/–/).length).toBeGreaterThan(0);
     expect(screen.getByText(/进行中/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '每日花费' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '当日结余' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '每日花费' }));
     expect(screen.getByRole('heading', { name: '每日花费' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '当日结余' })).toBeInTheDocument();
     expect(screen.getByLabelText('查看周期')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '当日结余' }));
+    expect(screen.getByRole('heading', { name: '当日结余' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: '补回账' }));
     expect(screen.getByText('还没有数据')).toBeInTheDocument();
@@ -84,7 +89,7 @@ describe('StatsPage v2', () => {
     expect(screen.getByText('每日正常额度')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '隐藏明细' }));
     expect(screen.queryByText('每日正常额度')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '每日花费' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '每周期结余' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '显示明细' }));
     expect(screen.getByText('每日正常额度')).toBeInTheDocument();
   });
