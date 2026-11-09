@@ -36,6 +36,10 @@ const METRIC_FIELD: Record<
   inflow: 'inflows',
 };
 
+function shortDay(dateKey: string): string {
+  return `${Number(dateKey.slice(5, 7))}/${Number(dateKey.slice(8))}`;
+}
+
 export function StatsPage() {
   const { state: mealState } = useMeal();
   const { state: planningState } = usePlanning();
@@ -43,9 +47,15 @@ export function StatsPage() {
   const [count, setCount] = useState(6);
   const [planningMetric, setPlanningMetric] = useState<PlanningMetric>('net');
   const [showDetails, setShowDetails] = useState(true);
+  const [selectedPeriodId, setSelectedPeriodId] = useState('');
   const today = todayKey();
   const periods = buildMealTimeline(mealState, today).filter((period) => period.startDate <= today);
   const displayPeriods = [...periods].reverse();
+  const selectedPeriod =
+    periods.find((period) => period.restore.id === selectedPeriodId) ?? periods[periods.length - 1];
+  const selectedDays = selectedPeriod?.days ?? [];
+  const spendData = selectedDays.map((day) => ({ label: shortDay(day.date), value: day.spent }));
+  const balanceData = selectedDays.map((day) => ({ label: shortDay(day.date), value: day.dailyBalance }));
   const planningRows = planningMonthlySeries(planningState, today, count);
   const planningDisplay = [...planningRows].reverse();
   const mealHasData = periods.some((period) => period.days.length > 0);
@@ -95,6 +105,55 @@ export function StatsPage() {
               formatValue={formatCompactYuan}
             />
           </section>
+
+          {ledger === 'meal' && (
+            <>
+              <div className="chart-period">
+                <label className="field">
+                  <span>查看周期</span>
+                  <select
+                    value={selectedPeriod?.restore.id ?? ''}
+                    onChange={(event) => setSelectedPeriodId(event.target.value)}
+                    aria-label="查看周期"
+                  >
+                    {[...periods].reverse().map((period) => (
+                      <option key={period.restore.id} value={period.restore.id}>
+                        {formatPeriodRange(period.startDate, period.endDate)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <section className="card">
+                <h2 className="card-title">每日花费</h2>
+                {selectedDays.length === 0 ? (
+                  <p className="muted">这个周期还没有记录。</p>
+                ) : (
+                  <BarChart
+                    data={spendData}
+                    color="var(--meal-primary)"
+                    ariaLabel="每日花费趋势"
+                    formatValue={formatCompactYuan}
+                  />
+                )}
+              </section>
+
+              <section className="card">
+                <h2 className="card-title">当日结余</h2>
+                {selectedDays.length === 0 ? (
+                  <p className="muted">这个周期还没有记录。</p>
+                ) : (
+                  <BarChart
+                    data={balanceData}
+                    color="var(--meal-primary)"
+                    ariaLabel="当日结余趋势"
+                    formatValue={formatCompactYuan}
+                  />
+                )}
+              </section>
+            </>
+          )}
 
           <div className="detail-toggle">
             <button type="button" className="text-button" onClick={() => setShowDetails((value) => !value)}>

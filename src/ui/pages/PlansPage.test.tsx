@@ -81,4 +81,32 @@ describe('PlansPage', () => {
       }),
     ).toBeInTheDocument();
   });
+
+  it('keeps older plans in 往期计划 and deletes them', async () => {
+    const user = userEvent.setup();
+    const oldMonth = addMonths(monthOf(todayKey()), -3);
+    const plan: PlanState = {
+      items: [
+        {
+          id: 'old',
+          spendMonth: oldMonth,
+          title: '旧计划',
+          amount: 100000,
+          replenishMonth: addMonths(oldMonth, 1),
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+    renderWithProviders(<PlansPage />, { plan, route: '/planning/plans' });
+
+    expect(screen.getByText('往期计划')).toBeInTheDocument();
+    expect(screen.queryByText('旧计划')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '展开 1 条' }));
+    expect(screen.getByText('旧计划')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '删除' }));
+    expect(screen.getByText('删除这条计划？')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认删除' }));
+    expect(await screen.findByText('还没有用款计划')).toBeInTheDocument();
+  });
 });

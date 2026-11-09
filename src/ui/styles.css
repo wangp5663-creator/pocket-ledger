@@ -1446,6 +1446,12 @@ h2 {
   color: var(--warning-text);
 }
 
+.chart-period {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .detail-toggle {
   display: flex;
   justify-content: flex-end;
@@ -1490,7 +1496,53 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 10px;
+}
+
+.plan-timeline__head {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.plan-archive__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-archive__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-archive__item:last-child {
+  border-bottom: none;
+}
+
+.plan-archive__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.plan-archive__main strong {
+  font-size: calc(14px * var(--font-scale, 1));
+}
+
+.plan-archive__amount {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-archive__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .plan-timeline {
