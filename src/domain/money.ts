@@ -23,6 +23,10 @@ export function formatSignedYuan(cents: Cents): string {
   return `${cents >= 0 ? '+' : '-'}${formatYuan(Math.abs(cents))}`;
 }
 
+export function formatYuanPlain(cents: Cents): string {
+  return `${centsToYuan(cents).replace(/\.00$/, '')}元`;
+}
+
 export function formatCompactYuan(cents: Cents): string {
   const sign = cents < 0 ? '-' : '';
   const abs = Math.abs(cents);

@@ -6,7 +6,7 @@ import {
   customizePeriod,
   defaultMealStateV2,
   deriveRates,
-  formatMealDeficitHint,
+  mealDeficitCopy,
   mealDeficitHint,
   missingMealDates,
   normalizeMealState,
@@ -411,13 +411,16 @@ function deficitStatus(overrides: Partial<MealStatus> = {}): MealStatus {
 describe('meal deficit hint', () => {
   it('does nothing for a non-negative balance', () => {
     expect(mealDeficitHint(deficitStatus({ balance: 0 }), '2026-11-02')).toEqual({ kind: 'none' });
-    expect(formatMealDeficitHint({ kind: 'none' })).toBeNull();
+    expect(mealDeficitCopy({ kind: 'none' })).toBeNull();
   });
 
   it('includes today when today is not recorded', () => {
     const hint = mealDeficitHint(deficitStatus({ balance: -12000 }), '2026-11-02');
     expect(hint).toEqual({ kind: 'reduce', over: 12000, days: 7, perDayYuan: 18 });
-    expect(formatMealDeficitHint(hint)).toBe('超支 ¥120.00，剩 7 天，每天额度至少需减少 ¥18.00');
+    expect(mealDeficitCopy(hint)).toEqual({
+      amount: '超支 120元',
+      detail: '剩 7 天，每天额度至少需减少 18 元',
+    });
   });
 
   it('starts from tomorrow when today is recorded', () => {
@@ -428,13 +431,19 @@ describe('meal deficit hint', () => {
   it('reports less than one yuan', () => {
     const hint = mealDeficitHint(deficitStatus({ balance: -50, endDate: '2026-11-04' }), '2026-11-02');
     expect(hint).toEqual({ kind: 'lessThanOne', over: 50, days: 3 });
-    expect(formatMealDeficitHint(hint)).toBe('超支 ¥0.50，剩 3 天，每天额度平均需减少不足 1 元');
+    expect(mealDeficitCopy(hint)).toEqual({
+      amount: '超支 0.50元',
+      detail: '剩 3 天，每天额度平均需减少不足 1 元',
+    });
   });
 
   it('reports impossible when the daily reduction exceeds the allowance', () => {
     const hint = mealDeficitHint(deficitStatus({ balance: -25000, endDate: '2026-11-06' }), '2026-11-02');
     expect(hint).toEqual({ kind: 'impossible', over: 25000, remainingOver: 15000 });
-    expect(formatMealDeficitHint(hint)).toBe('即使每天不花，本周期仍将超支 ¥150.00');
+    expect(mealDeficitCopy(hint)).toEqual({
+      amount: '仍将超支 150元',
+      detail: '即使每天不花也补不平',
+    });
   });
 
   it('treats equality with the allowance as achievable', () => {
@@ -448,6 +457,9 @@ describe('meal deficit hint', () => {
       '2026-11-02',
     );
     expect(hint).toEqual({ kind: 'ended', over: 100 });
-    expect(formatMealDeficitHint(hint)).toBe('本周期已结束，超支 ¥1.00 不会结转');
+    expect(mealDeficitCopy(hint)).toEqual({
+      amount: '超支 1元',
+      detail: '本周期已结束，不会结转',
+    });
   });
 });

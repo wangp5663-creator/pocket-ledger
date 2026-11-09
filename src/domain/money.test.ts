@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { centsToYuan, formatCompactYuan, formatSignedYuan, formatYuan, parseYuanToCents } from './money';
+import {
+  centsToYuan,
+  formatCompactYuan,
+  formatSignedYuan,
+  formatYuan,
+  formatYuanPlain,
+  parseYuanToCents,
+} from './money';
 
 describe('parseYuanToCents', () => {
   it('parses whole and decimal yuan', () => {
@@ -36,5 +43,11 @@ describe('formatting', () => {
     expect(formatCompactYuan(100000)).toBe('¥1k');
     expect(formatCompactYuan(123456)).toBe('¥1.2k');
     expect(formatCompactYuan(1000000)).toBe('¥10k');
+  });
+
+  it('formats plain yuan for highlighted copy', () => {
+    expect(formatYuanPlain(0)).toBe('0元');
+    expect(formatYuanPlain(400)).toBe('4元');
+    expect(formatYuanPlain(450)).toBe('4.50元');
   });
 });

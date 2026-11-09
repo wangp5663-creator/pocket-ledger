@@ -115,19 +115,23 @@ export function SettingsPage() {
               aria-label="周期起始日"
             />
           </label>
-          <p className="muted">
-            整月自由额度 {formatYuan(rates.freeAllowance)} · 正常 {formatYuan(rates.dailyNormal)}/天 · 保底{' '}
-            {formatYuan(rates.dailyMinimum)}/天
-          </p>
-          <p className="muted">周期默认从每月起始日到下个月起始日前一天；修改后下次恢复生效。</p>
-          <p className="muted">开始日期 {state.settings.startDate ? formatDisplayDate(state.settings.startDate) : '未设置'}</p>
+          <div className="settings-notes">
+            <p className="muted">
+              整月自由额度 {formatYuan(rates.freeAllowance)} · 正常 {formatYuan(rates.dailyNormal)}/天 · 保底{' '}
+              {formatYuan(rates.dailyMinimum)}/天
+            </p>
+            <p className="muted">周期默认从每月起始日到下个月起始日前一天；修改后下次恢复生效。</p>
+            <p className="muted">
+              开始日期 {state.settings.startDate ? formatDisplayDate(state.settings.startDate) : '未设置'}
+            </p>
+          </div>
           {error && <p className="form-error" role="alert">{error}</p>}
           {message && <p className="positive" role="status" aria-live="polite">{message}</p>}
           <button className="button button--primary" type="submit">保存设置</button>
         </form>
       </section>
 
-      <section className="card">
+      <section className="card settings-cycle">
         <h2 className="card-title">当前周期</h2>
         <div className="summary-grid">
           <div><span className="muted">开始日期</span><strong>{formatDisplayDate(status.startDate)}</strong></div>

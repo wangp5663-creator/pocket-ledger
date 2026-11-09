@@ -5,6 +5,9 @@ import {
   daysInMonth,
   formatCompactMonth,
   formatDateKey,
+  formatFullDisplayDate,
+  formatPeriodRange,
+  formatPeriodShort,
   formatShortMonth,
   isValidDateKey,
   isValidMonthKey,
@@ -65,5 +68,19 @@ describe('dates', () => {
   it('abbreviates cross-year months for narrow tables', () => {
     expect(formatCompactMonth('2026-11', '2026-11-08')).toBe('11月');
     expect(formatCompactMonth('2027-01', '2026-11-08')).toBe('27年1月');
+  });
+
+  it('adds year and weekday for long date labels', () => {
+    expect(formatFullDisplayDate('2026-11-01')).toBe('2026年11月1日 周日');
+  });
+
+  it('formats period ranges with the year', () => {
+    expect(formatPeriodRange('2026-11-01', '2026-11-30')).toBe('2026年11月1日 – 11月30日');
+    expect(formatPeriodRange('2026-12-01', '2027-01-31')).toBe('2026年12月1日 – 2027年1月31日');
+  });
+
+  it('formats compact period labels for chart axes', () => {
+    expect(formatPeriodShort('2026-11-01', '2026-11-30')).toBe('11月');
+    expect(formatPeriodShort('2026-11-15', '2026-12-14')).toBe('11/15–12/14');
   });
 });

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 
 interface BarDatum {
@@ -10,6 +11,8 @@ interface BarChartProps {
   color?: string;
   ariaLabel?: string;
   formatValue?: (value: number) => string;
+  scroll?: boolean;
+  scrollKey?: string;
 }
 
 export function BarChart({
@@ -17,14 +20,29 @@ export function BarChart({
   color = 'var(--meal-primary)',
   ariaLabel = '月度趋势图',
   formatValue = (value) => String(value),
+  scroll = false,
+  scrollKey,
 }: BarChartProps) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scroll) return;
+    const node = scrollerRef.current;
+    if (node) node.scrollLeft = node.scrollWidth;
+  }, [scroll, scrollKey]);
+
   if (data.length === 0) return null;
   const maxAbs = Math.max(...data.map((item) => Math.abs(item.value)), 1);
   const hasNegative = data.some((item) => item.value < 0);
   const factor = hasNegative ? 50 : 100;
 
   return (
-    <div className={`bar-chart${hasNegative ? ' bar-chart--split' : ''}`} role="img" aria-label={ariaLabel}>
+    <div
+      ref={scrollerRef}
+      className={`bar-chart${hasNegative ? ' bar-chart--split' : ''}${scroll ? ' bar-chart--scroll' : ''}`}
+      role="img"
+      aria-label={ariaLabel}
+    >
       {data.map((item, index) => {
         const negative = item.value < 0;
         const height = Math.max(2, (Math.abs(item.value) / maxAbs) * factor);

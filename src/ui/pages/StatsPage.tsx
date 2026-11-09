@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { formatDisplayDate, formatMonthLabel, todayKey } from '../../domain/dates';
+import {
+  formatDisplayDate,
+  formatMonthLabel,
+  formatPeriodRange,
+  formatPeriodShort,
+  todayKey,
+} from '../../domain/dates';
 import { buildMealTimeline } from '../../domain/mealV2';
 import { formatCompactYuan, formatSignedYuan, formatYuan } from '../../domain/money';
 import type { PlanningMonthSummary } from '../../domain/planning';
@@ -12,6 +18,13 @@ import { SegmentedControl } from '../components/SegmentedControl';
 
 type Ledger = 'meal' | 'planning';
 type PlanningMetric = 'net' | 'spend' | 'replenish' | 'inflow';
+type MealMetric = 'periodNet' | 'dailySpend' | 'dailyBalance';
+
+const MEAL_METRIC_OPTIONS: Array<{ value: MealMetric; label: string }> = [
+  { value: 'periodNet', label: '每周期结余' },
+  { value: 'dailySpend', label: '每日花费' },
+  { value: 'dailyBalance', label: '当日结余' },
+];
 
 const METRIC_OPTIONS: Array<{ value: PlanningMetric; label: string }> = [
   { value: 'net', label: '净变化' },
@@ -30,7 +43,7 @@ const METRIC_FIELD: Record<
   inflow: 'inflows',
 };
 
-function shortDate(dateKey: string): string {
+function shortDay(dateKey: string): string {
   return `${Number(dateKey.slice(5, 7))}/${Number(dateKey.slice(8))}`;
 }
 
@@ -40,24 +53,47 @@ export function StatsPage() {
   const [ledger, setLedger] = useState<Ledger>('meal');
   const [count, setCount] = useState(6);
   const [planningMetric, setPlanningMetric] = useState<PlanningMetric>('net');
+  const [mealMetric, setMealMetric] = useState<MealMetric>('periodNet');
   const [showDetails, setShowDetails] = useState(true);
+  const [selectedPeriodId, setSelectedPeriodId] = useState('');
   const today = todayKey();
   const periods = buildMealTimeline(mealState, today).filter((period) => period.startDate <= today);
   const displayPeriods = [...periods].reverse();
+  const selectedPeriod =
+    periods.find((period) => period.restore.id === selectedPeriodId) ?? periods[periods.length - 1];
+  const selectedDays = selectedPeriod?.days ?? [];
   const planningRows = planningMonthlySeries(planningState, today, count);
   const planningDisplay = [...planningRows].reverse();
   const mealHasData = periods.some((period) => period.days.length > 0);
   const planningHasData =
     planningState.spends.length + planningState.replenishes.length + planningState.inflows.length > 0;
   const metric = METRIC_OPTIONS.find((option) => option.value === planningMetric)!;
+  const mealMetricOption = MEAL_METRIC_OPTIONS.find((option) => option.value === mealMetric)!;
+
+  const mealDailyData = selectedDays.map((day) => ({
+    label: shortDay(day.date),
+    value: mealMetric === 'dailySpend' ? day.spent : day.dailyBalance,
+  }));
 
   const chartData =
     ledger === 'meal'
-      ? periods.map((period) => ({ label: shortDate(period.startDate), value: period.net }))
+      ? mealMetric === 'periodNet'
+        ? periods.map((period) => ({
+            label: formatPeriodShort(period.startDate, period.endDate),
+            value: period.net,
+          }))
+        : mealDailyData
       : planningRows.map((row) => ({
           label: `${Number(row.month.slice(5))}月`,
           value: row[METRIC_FIELD[planningMetric]],
         }));
+
+  const chartTitle = ledger === 'meal' ? mealMetricOption.label : `每月${metric.label}`;
+  const chartAria = ledger === 'meal' ? `餐补${mealMetricOption.label}趋势` : `补回账月度${metric.label}趋势`;
+  const chartSubtitle =
+    ledger === 'meal' && mealMetric !== 'periodNet' && selectedPeriod
+      ? formatPeriodRange(selectedPeriod.startDate, selectedPeriod.endDate)
+      : null;
 
   const hasData = ledger === 'meal' ? mealHasData : planningHasData;
 
@@ -73,6 +109,10 @@ export function StatsPage() {
         onChange={setLedger}
       />
 
+      {ledger === 'meal' && (
+        <SegmentedControl options={MEAL_METRIC_OPTIONS} value={mealMetric} onChange={setMealMetric} />
+      )}
+
       {ledger === 'planning' && (
         <SegmentedControl options={METRIC_OPTIONS} value={planningMetric} onChange={setPlanningMetric} />
       )}
@@ -81,14 +121,49 @@ export function StatsPage() {
         <EmptyState title="还没有数据" hint="记录几笔后，这里会显示统计。" />
       ) : (
         <>
+          {ledger === 'meal' && mealMetric !== 'periodNet' && (
+            <div className="chart-period">
+              <label className="field">
+                <span>查看周期</span>
+                <select
+                  value={selectedPeriod?.restore.id ?? ''}
+                  onChange={(event) => setSelectedPeriodId(event.target.value)}
+                  aria-label="查看周期"
+                >
+                  {[...periods].reverse().map((period) => (
+                    <option key={period.restore.id} value={period.restore.id}>
+                      {formatPeriodRange(period.startDate, period.endDate)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+
           <section className="card">
-            <h2 className="card-title">{ledger === 'meal' ? '每周期结余' : `每月${metric.label}`}</h2>
-            <BarChart
-              data={chartData}
-              color={ledger === 'meal' ? 'var(--meal-primary)' : 'var(--planning-primary)'}
-              ariaLabel={ledger === 'meal' ? '餐补周期结余趋势' : `补回账月度${metric.label}趋势`}
-              formatValue={formatCompactYuan}
-            />
+            <h2 className="card-title">{chartTitle}</h2>
+            {chartSubtitle && (
+              <p className="muted chart-subtitle">
+                {chartSubtitle}
+                {mealMetric !== 'periodNet' && selectedDays.length > 7 ? ' · 左右滑动查看' : ''}
+              </p>
+            )}
+            {chartData.length === 0 ? (
+              <p className="muted">这个周期还没有记录。</p>
+            ) : (
+              <BarChart
+                data={chartData}
+                color={ledger === 'meal' ? 'var(--meal-primary)' : 'var(--planning-primary)'}
+                ariaLabel={chartAria}
+                formatValue={formatCompactYuan}
+                scroll={ledger === 'meal' && mealMetric !== 'periodNet'}
+                scrollKey={
+                  ledger === 'meal' && mealMetric !== 'periodNet'
+                    ? `${mealMetric}-${selectedPeriod?.restore.id ?? ''}`
+                    : undefined
+                }
+              />
+            )}
           </section>
 
           <div className="detail-toggle">
@@ -105,9 +180,7 @@ export function StatsPage() {
                 {displayPeriods.map((period) => (
                   <div className="period-stat" key={period.restore.id}>
                     <div className="period-stat__head">
-                      <strong>
-                        {formatDisplayDate(period.startDate)} – {formatDisplayDate(period.endDate)}
-                      </strong>
+                      <strong>{formatPeriodRange(period.startDate, period.endDate)}</strong>
                       {period.startDate <= today && period.endDate >= today && (
                         <span className="mode-badge">进行中</span>
                       )}
@@ -135,6 +208,26 @@ export function StatsPage() {
                         <span className="muted">结转</span>
                         <strong>{period.carry > 0 ? formatYuan(period.carry) : '已清零'}</strong>
                       </div>
+                    </div>
+                    <div className="period-stat__days">
+                      <div className="period-stat__day period-stat__day--head">
+                        <span>日期</span>
+                        <span>花费</span>
+                        <span>当日结余</span>
+                      </div>
+                      {period.days.length === 0 ? (
+                        <p className="muted">没有记录</p>
+                      ) : (
+                        [...period.days].reverse().map((day) => (
+                          <div className="period-stat__day" key={day.date}>
+                            <span>{formatDisplayDate(day.date)}</span>
+                            <span>{formatYuan(day.spent)}</span>
+                            <span className={day.dailyBalance >= 0 ? 'positive' : 'negative'}>
+                              {formatSignedYuan(day.dailyBalance)}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 ))}

@@ -1,8 +1,10 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { addMonths, formatShortMonth, monthOf, todayKey } from '../../domain/dates';
 import { emptyPlanState, type PlanState } from '../../domain/planItems';
+import { PLAN_ITEMS_STORAGE_KEY } from '../../storage/planItemsStorage';
+import { PLANNING_STORAGE_KEY } from '../../storage/planningStorage';
 import { renderWithProviders } from '../../test/render';
 import { PlansPage } from './PlansPage';
 
@@ -66,14 +68,13 @@ describe('PlansPage', () => {
     expect(await screen.findByText('还没有用款计划')).toBeInTheDocument();
   });
 
-  it('shows monthly totals and cumulative values', () => {
+  it('shows planned spend and replenish totals', () => {
     renderWithProviders(<PlansPage />, { plan: fixture(), route: '/planning/plans' });
     expect(screen.getByText('计划支出')).toBeInTheDocument();
     expect(screen.getByText('计划回补')).toBeInTheDocument();
-    expect(screen.getByText('累计')).toBeInTheDocument();
-    expect(screen.getAllByText(/净额/).length).toBeGreaterThan(0);
+    expect(screen.queryByText('累计')).not.toBeInTheDocument();
+    expect(screen.queryByText('净额')).not.toBeInTheDocument();
     expect(screen.getByText('支出 ¥5000.00')).toBeInTheDocument();
-    expect(screen.getByText('回补 ¥5000.00')).toBeInTheDocument();
 
     const current = monthOf(todayKey());
     expect(
@@ -81,5 +82,56 @@ describe('PlansPage', () => {
         name: `${formatShortMonth(current, todayKey())} 换电脑 ¥5000.00 回补 ${formatShortMonth(addMonths(current, 1), todayKey())}`,
       }),
     ).toBeInTheDocument();
+  });
+
+  it('transfers a plan into the ledger and removes it from plans', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<PlansPage />, { plan: fixture(), route: '/planning/plans' });
+
+    await user.click(screen.getByRole('button', { name: /换电脑/ }));
+    await user.click(screen.getByRole('button', { name: '转入补回账' }));
+    expect(screen.getByText('转入补回账？')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认转入' }));
+
+    expect(await screen.findByText('还没有用款计划')).toBeInTheDocument();
+    await waitFor(() => {
+      const planning = JSON.parse(localStorage.getItem(PLANNING_STORAGE_KEY) ?? '{}');
+      expect(planning.events).toHaveLength(1);
+      expect(planning.events[0]).toMatchObject({
+        name: '换电脑',
+        plannedTotal: 500000,
+        replenishPlan: [{ month: addMonths(monthOf(todayKey()), 1), amount: 500000 }],
+      });
+      const plans = JSON.parse(localStorage.getItem(PLAN_ITEMS_STORAGE_KEY) ?? '{}');
+      expect(plans.items).toEqual([]);
+    });
+  });
+
+  it('keeps older plans in 往期计划 and deletes them', async () => {
+    const user = userEvent.setup();
+    const oldMonth = addMonths(monthOf(todayKey()), -3);
+    const plan: PlanState = {
+      items: [
+        {
+          id: 'old',
+          spendMonth: oldMonth,
+          title: '旧计划',
+          amount: 100000,
+          replenishMonth: addMonths(oldMonth, 1),
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+    renderWithProviders(<PlansPage />, { plan, route: '/planning/plans' });
+
+    expect(screen.getByText('往期计划')).toBeInTheDocument();
+    expect(screen.queryByText('旧计划')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '展开 1 条' }));
+    expect(screen.getByText('旧计划')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '删除' }));
+    expect(screen.getByText('删除这条计划？')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认删除' }));
+    expect(await screen.findByText('还没有用款计划')).toBeInTheDocument();
   });
 });
