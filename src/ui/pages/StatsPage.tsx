@@ -142,7 +142,12 @@ export function StatsPage() {
 
           <section className="card">
             <h2 className="card-title">{chartTitle}</h2>
-            {chartSubtitle && <p className="muted chart-subtitle">{chartSubtitle}</p>}
+            {chartSubtitle && (
+              <p className="muted chart-subtitle">
+                {chartSubtitle}
+                {mealMetric !== 'periodNet' && selectedDays.length > 7 ? ' · 左右滑动查看' : ''}
+              </p>
+            )}
             {chartData.length === 0 ? (
               <p className="muted">这个周期还没有记录。</p>
             ) : (
@@ -151,6 +156,12 @@ export function StatsPage() {
                 color={ledger === 'meal' ? 'var(--meal-primary)' : 'var(--planning-primary)'}
                 ariaLabel={chartAria}
                 formatValue={formatCompactYuan}
+                scroll={ledger === 'meal' && mealMetric !== 'periodNet'}
+                scrollKey={
+                  ledger === 'meal' && mealMetric !== 'periodNet'
+                    ? `${mealMetric}-${selectedPeriod?.restore.id ?? ''}`
+                    : undefined
+                }
               />
             )}
           </section>

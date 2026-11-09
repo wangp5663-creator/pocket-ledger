@@ -827,6 +827,20 @@ h2 {
   padding-top: 8px;
 }
 
+.bar-chart--scroll {
+  overflow-x: auto;
+  justify-content: flex-start;
+  gap: 6px;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+
+.bar-chart--scroll .bar-chart__item {
+  flex: 0 0 32px;
+  min-width: 32px;
+  scroll-snap-align: start;
+}
+
 .bar-chart__value {
   font-size: calc(12px * var(--font-scale, 1));
   font-weight: 600;
