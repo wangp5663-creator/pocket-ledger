@@ -1550,6 +1550,12 @@ h2 {
   gap: 8px;
 }
 
+.text-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .plan-timeline {
   display: flex;
   gap: 10px;

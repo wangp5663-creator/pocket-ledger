@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { addMonths, formatCompactMonth, formatShortMonth, monthOf, todayKey } from '../../domain/dates';
-import { formatSignedYuan, formatYuan } from '../../domain/money';
+import { formatYuan } from '../../domain/money';
 import { planMonthBuckets, sortPlanItems, summarizePlanRange } from '../../domain/planItems';
 import type { PlanItem, PlanItemDraft } from '../../domain/planItems';
 import { usePlan } from '../../state/PlanStore';
+import { usePlanning } from '../../state/PlanningStore';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
 import { PlanForm } from '../components/PlanForm';
@@ -15,6 +16,7 @@ type SortMode = 'spendMonth' | 'createdAt';
 
 export function PlansPage() {
   const { items, addItem, updateItem, deleteItem } = usePlan();
+  const { addEvent } = usePlanning();
   const today = todayKey();
   const currentMonth = monthOf(today);
   const previousMonth = addMonths(currentMonth, -1);
@@ -24,6 +26,7 @@ export function PlansPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<PlanItem | null>(null);
   const [deleting, setDeleting] = useState<PlanItem | null>(null);
+  const [transferring, setTransferring] = useState<PlanItem | null>(null);
 
   const recentItems = items.filter((item) => item.spendMonth >= previousMonth);
   const archivedItems = items.filter((item) => item.spendMonth < previousMonth);
@@ -41,6 +44,16 @@ export function PlansPage() {
     if (!editing) return;
     updateItem(editing.id, draft);
     setEditing(null);
+  };
+
+  const transferPlan = (item: PlanItem) => {
+    addEvent({
+      name: item.title,
+      plannedTotal: item.amount,
+      note: `由用款计划转入（${formatCompactMonth(item.spendMonth, today)} 支出）`,
+      replenishPlan: [{ month: item.replenishMonth, amount: item.amount }],
+    });
+    deleteItem(item.id);
   };
 
   return (
@@ -127,6 +140,9 @@ export function PlansPage() {
                       </div>
                       <span className="plan-archive__amount">{formatYuan(item.amount)}</span>
                       <div className="plan-archive__actions">
+                        <button type="button" className="text-button" onClick={() => setTransferring(item)}>
+                          转入
+                        </button>
                         <button type="button" className="text-button" onClick={() => setEditing(item)}>
                           编辑
                         </button>
@@ -180,16 +196,6 @@ export function PlansPage() {
                 <span className="muted">计划回补</span>
                 <strong>{formatYuan(summary.replenish)}</strong>
               </div>
-              <div>
-                <span className="muted">净额</span>
-                <strong className={summary.net >= 0 ? 'positive' : 'negative'}>{formatSignedYuan(summary.net)}</strong>
-              </div>
-              <div>
-                <span className="muted">累计</span>
-                <strong className={summary.cumulative >= 0 ? 'positive' : 'negative'}>
-                  {formatSignedYuan(summary.cumulative)}
-                </strong>
-              </div>
             </div>
 
             <p className="muted plan-timeline__hint">横向为月份；每列左侧是支出事件，右侧是对应金额。</p>
@@ -239,16 +245,28 @@ export function PlansPage() {
             submitLabel="保存修改"
             onSubmit={save}
           />
-          <button
-            type="button"
-            className="text-button text-button--danger"
-            onClick={() => {
-              setDeleting(editing);
-              setEditing(null);
-            }}
-          >
-            删除
-          </button>
+          <div className="text-actions">
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => {
+                setTransferring(editing);
+                setEditing(null);
+              }}
+            >
+              转入补回账
+            </button>
+            <button
+              type="button"
+              className="text-button text-button--danger"
+              onClick={() => {
+                setDeleting(editing);
+                setEditing(null);
+              }}
+            >
+              删除
+            </button>
+          </div>
         </Sheet>
       )}
 
@@ -261,6 +279,20 @@ export function PlansPage() {
           onConfirm={() => {
             deleteItem(deleting.id);
             setDeleting(null);
+          }}
+        />
+      )}
+
+      {transferring && (
+        <ConfirmDialog
+          open
+          title="转入补回账？"
+          message="会用这条计划创建一个补回账事项，并从用款计划中移除。"
+          confirmLabel="确认转入"
+          onCancel={() => setTransferring(null)}
+          onConfirm={() => {
+            transferPlan(transferring);
+            setTransferring(null);
           }}
         />
       )}
