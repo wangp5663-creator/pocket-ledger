@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { formatDisplayDate, formatMonthLabel, todayKey } from '../../domain/dates';
+import {
+  formatDisplayDate,
+  formatMonthLabel,
+  formatPeriodRange,
+  formatPeriodShort,
+  todayKey,
+} from '../../domain/dates';
 import { buildMealTimeline } from '../../domain/mealV2';
 import { formatCompactYuan, formatSignedYuan, formatYuan } from '../../domain/money';
 import type { PlanningMonthSummary } from '../../domain/planning';
@@ -30,10 +36,6 @@ const METRIC_FIELD: Record<
   inflow: 'inflows',
 };
 
-function shortDate(dateKey: string): string {
-  return `${Number(dateKey.slice(5, 7))}/${Number(dateKey.slice(8))}`;
-}
-
 export function StatsPage() {
   const { state: mealState } = useMeal();
   const { state: planningState } = usePlanning();
@@ -53,7 +55,10 @@ export function StatsPage() {
 
   const chartData =
     ledger === 'meal'
-      ? periods.map((period) => ({ label: shortDate(period.startDate), value: period.net }))
+      ? periods.map((period) => ({
+          label: formatPeriodShort(period.startDate, period.endDate),
+          value: period.net,
+        }))
       : planningRows.map((row) => ({
           label: `${Number(row.month.slice(5))}月`,
           value: row[METRIC_FIELD[planningMetric]],
@@ -105,9 +110,7 @@ export function StatsPage() {
                 {displayPeriods.map((period) => (
                   <div className="period-stat" key={period.restore.id}>
                     <div className="period-stat__head">
-                      <strong>
-                        {formatDisplayDate(period.startDate)} – {formatDisplayDate(period.endDate)}
-                      </strong>
+                      <strong>{formatPeriodRange(period.startDate, period.endDate)}</strong>
                       {period.startDate <= today && period.endDate >= today && (
                         <span className="mode-badge">进行中</span>
                       )}
@@ -135,6 +138,26 @@ export function StatsPage() {
                         <span className="muted">结转</span>
                         <strong>{period.carry > 0 ? formatYuan(period.carry) : '已清零'}</strong>
                       </div>
+                    </div>
+                    <div className="period-stat__days">
+                      <div className="period-stat__day period-stat__day--head">
+                        <span>日期</span>
+                        <span>花费</span>
+                        <span>当日结余</span>
+                      </div>
+                      {period.days.length === 0 ? (
+                        <p className="muted">没有记录</p>
+                      ) : (
+                        [...period.days].reverse().map((day) => (
+                          <div className="period-stat__day" key={day.date}>
+                            <span>{formatDisplayDate(day.date)}</span>
+                            <span>{formatYuan(day.spent)}</span>
+                            <span className={day.dailyBalance >= 0 ? 'positive' : 'negative'}>
+                              {formatSignedYuan(day.dailyBalance)}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 ))}

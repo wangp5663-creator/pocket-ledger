@@ -73,7 +73,6 @@ describe('PlansPage', () => {
     expect(screen.getByText('累计')).toBeInTheDocument();
     expect(screen.getAllByText(/净额/).length).toBeGreaterThan(0);
     expect(screen.getByText('支出 ¥5000.00')).toBeInTheDocument();
-    expect(screen.getByText('回补 ¥5000.00')).toBeInTheDocument();
 
     const current = monthOf(todayKey());
     expect(

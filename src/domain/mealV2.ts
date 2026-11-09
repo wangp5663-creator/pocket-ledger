@@ -8,7 +8,7 @@ import {
   todayKey,
 } from './dates';
 import { createId } from './id';
-import { formatYuan } from './money';
+import { formatYuanPlain } from './money';
 
 export type MealMode = 'normal' | 'minimum';
 
@@ -451,17 +451,28 @@ export function mealDeficitHint(status: MealStatus, today: string): MealDeficitH
   return { kind: 'reduce', over, days, perDayYuan: Math.ceil(perDay / 100) };
 }
 
-export function formatMealDeficitHint(hint: MealDeficitHint): string | null {
+export interface MealDeficitCopy {
+  amount: string;
+  detail: string;
+}
+
+export function mealDeficitCopy(hint: MealDeficitHint): MealDeficitCopy | null {
   switch (hint.kind) {
     case 'none':
       return null;
     case 'ended':
-      return `本周期已结束，超支 ${formatYuan(hint.over)} 不会结转`;
+      return { amount: `超支 ${formatYuanPlain(hint.over)}`, detail: '本周期已结束，不会结转' };
     case 'impossible':
-      return `即使每天不花，本周期仍将超支 ${formatYuan(hint.remainingOver)}`;
+      return { amount: `仍将超支 ${formatYuanPlain(hint.remainingOver)}`, detail: '即使每天不花也补不平' };
     case 'lessThanOne':
-      return `超支 ${formatYuan(hint.over)}，剩 ${hint.days} 天，每天额度平均需减少不足 1 元`;
+      return {
+        amount: `超支 ${formatYuanPlain(hint.over)}`,
+        detail: `剩 ${hint.days} 天，每天额度平均需减少不足 1 元`,
+      };
     case 'reduce':
-      return `超支 ${formatYuan(hint.over)}，剩 ${hint.days} 天，每天额度至少需减少 ${formatYuan(hint.perDayYuan * 100)}`;
+      return {
+        amount: `超支 ${formatYuanPlain(hint.over)}`,
+        detail: `剩 ${hint.days} 天，每天额度至少需减少 ${hint.perDayYuan} 元`,
+      };
   }
 }

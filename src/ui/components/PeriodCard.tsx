@@ -1,4 +1,4 @@
-import { formatDisplayDate } from '../../domain/dates';
+import { formatDisplayDate, formatPeriodRange } from '../../domain/dates';
 import type { MealDay, MealPeriod } from '../../domain/mealV2';
 import { formatSignedYuan, formatYuan } from '../../domain/money';
 
@@ -18,10 +18,16 @@ function RecordRow({
         {day.note && <span className="list-row__note">{day.note}</span>}
         {day.switchedToMinimum && <span className="badge badge--danger">自由额度已用完</span>}
       </div>
-      <div className="list-row__amounts">
+      <div className="list-row__amounts record-row__amounts">
         <span>额度 {formatYuan(day.allowance)} · 花费 {formatYuan(day.spent)}</span>
-        <span className={day.dailyBalance >= 0 ? 'positive' : 'negative'}>当日结余 {formatSignedYuan(day.dailyBalance)}</span>
-        <span className="muted">累计结余 {formatYuan(day.balanceAfter)}</span>
+        <div className="record-row__balances">
+          <span className="muted">当日结余</span>
+          <span className={day.dailyBalance >= 0 ? 'positive' : 'negative'}>
+            {formatSignedYuan(day.dailyBalance)}
+          </span>
+          <span className="muted">累计结余</span>
+          <span>{formatYuan(day.balanceAfter)}</span>
+        </div>
       </div>
       <div className="list-row__actions">
         <button
@@ -57,9 +63,7 @@ export function PeriodCard({
   return (
     <div className="card">
       <div className="period-heading">
-        <strong>
-          {formatDisplayDate(period.startDate)} – {formatDisplayDate(period.endDate)}
-        </strong>
+        <strong>{formatPeriodRange(period.startDate, period.endDate)}</strong>
         <div>
           {period.switchDate && (
             <span className="mode-badge mode-badge--minimum">保底 {formatYuan(period.restore.dailyMinimum)}</span>

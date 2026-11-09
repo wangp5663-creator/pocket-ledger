@@ -25,7 +25,7 @@ describe('MealPage v2', () => {
   it('replaces the sad message with a deficit reminder', () => {
     renderWithProviders(<MealPage />, { meal: makeState(3000) });
     expect(screen.queryByText('有点超支了…')).not.toBeInTheDocument();
-    expect(screen.getByText(/超支 ¥10\.00|本周期已结束|即使每天不花/)).toBeInTheDocument();
+    expect(screen.getByText(/超支 10元|本周期已结束|仍将超支/)).toBeInTheDocument();
   });
 
   it('shows the minimum phase copy after crossing the free limit', () => {
@@ -46,6 +46,7 @@ describe('MealPage v2', () => {
     );
     renderWithProviders(<MealPage />, { meal: state });
     expect(screen.getByText(/正常 ¥26.67/)).toBeInTheDocument();
+    expect(screen.getByText(/保底余量 ¥/)).toBeInTheDocument();
   });
 
   it('shows the threshold sheet after crossing on save', async () => {

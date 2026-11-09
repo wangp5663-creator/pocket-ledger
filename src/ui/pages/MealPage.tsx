@@ -5,7 +5,7 @@ import { formatDisplayDate, todayKey } from '../../domain/dates';
 import {
   buildMealTimeline,
   currentMealStatus,
-  formatMealDeficitHint,
+  mealDeficitCopy,
   mealDeficitHint,
   missingMealDates,
 } from '../../domain/mealV2';
@@ -70,7 +70,7 @@ export function MealPage() {
   const missing = missingMealDates(state, today);
   const todayRecord = state.records[today];
   const recordedDays = timeline.reduce((total, period) => total + period.days.length, 0);
-  const deficitMessage = formatMealDeficitHint(mealDeficitHint(status, today));
+  const deficitCopy = mealDeficitCopy(mealDeficitHint(status, today));
 
   const previousMode = useRef(status.mode);
   const [thresholdOpen, setThresholdOpen] = useState(false);
@@ -94,25 +94,32 @@ export function MealPage() {
             <strong className={`balance-card__amount${status.balance < 0 ? ' is-negative' : ''}`}>
               {formatYuan(status.balance)}
             </strong>
-            <span className="status-pill">
+            <span className="status-line">
               {status.mode === 'minimum' ? (
                 <>
-                  <span className="status-pill__part">保底 {formatYuan(status.dailyMinimum)}/天</span>
-                  <span className="status-pill__part">无自由额度</span>
+                  <span className="status-line__part">保底 {formatYuan(status.dailyMinimum)}/天</span>
+                  <span className="status-line__part">无自由额度</span>
                 </>
               ) : (
                 <>
-                  <span className="status-pill__part">正常 {formatYuan(status.dailyNormal)}/天</span>
-                  <span className="status-pill__part">距保底 {formatYuan(status.distanceToMinimum)}</span>
+                  <span className="status-line__part">正常 {formatYuan(status.dailyNormal)}/天</span>
+                  <span className="status-line__part">保底余量 {formatYuan(status.distanceToMinimum)}</span>
                 </>
               )}
             </span>
             <div className="balance-card__meta">
               已记录 {recordedDays} 天 · {formatDisplayDate(status.startDate)} 起
             </div>
-            <p className="balance-card__message">
-              {deficitMessage ?? (status.mode === 'minimum' ? '自由额度已用完' : '真棒！今天也攒下啦')}
-            </p>
+            {deficitCopy ? (
+              <div className="deficit-hint">
+                <strong className="deficit-hint__amount">{deficitCopy.amount}</strong>
+                <span className="deficit-hint__detail">{deficitCopy.detail}</span>
+              </div>
+            ) : (
+              <p className="balance-card__message">
+                {status.mode === 'minimum' ? '自由额度已用完' : '真棒！今天也攒下啦'}
+              </p>
+            )}
           </div>
           <div className="balance-card__mascot">
             <BeanMascot state={mascotState} />
@@ -178,11 +185,7 @@ export function MealPage() {
         </div>
         <div>
           <span className="muted">当前阶段</span>
-          <strong>
-            {status.switchDate
-              ? `保底阶段 ${formatYuan(status.dailyMinimum)}/天`
-              : `正常阶段 ${formatYuan(status.dailyNormal)}/天`}
-          </strong>
+          <strong>{status.switchDate ? '保底阶段' : '正常阶段'}</strong>
         </div>
         <div>
           <span className="muted">自由额度</span>

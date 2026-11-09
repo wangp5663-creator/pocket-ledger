@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatDisplayDate, formatMonthLabel, monthOf, todayKey } from '../../domain/dates';
+import { formatFullDisplayDate, formatMonthLabel, monthOf, todayKey } from '../../domain/dates';
 import { currentMealStatus, missingMealDates, upsertMealRecord } from '../../domain/mealV2';
 import { parseYuanToCents } from '../../domain/money';
 import { useMeal } from '../../state/MealStore';
@@ -24,18 +24,29 @@ function BackfillRow({ date, onSave }: { date: string; onSave: (date: string, sp
   };
 
   return (
-    <div className="list-row">
-      <div className="list-row__main">
-        <span className="list-row__title">{formatDisplayDate(date)}</span>
+    <div className="backfill-item">
+      <div className="backfill-item__head">
+        <strong>{formatFullDisplayDate(date)}</strong>
+        <span className="muted">待补记</span>
       </div>
       <div className="backfill-row">
         <MoneyInput value={amount} onChange={setAmount} ariaLabel={`${date} 金额`} />
-        <input type="text" value={note} onChange={(event) => setNote(event.target.value)} placeholder="备注" aria-label={`${date} 备注`} />
+        <input
+          type="text"
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="备注（可选）"
+          aria-label={`${date} 备注`}
+        />
         <button type="button" className="button button--secondary" onClick={save} aria-label={`保存 ${date}`}>
           保存
         </button>
       </div>
-      {error && <p className="form-error" role="alert">{error}</p>}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -43,7 +54,7 @@ function BackfillRow({ date, onSave }: { date: string; onSave: (date: string, sp
 export function BackfillPage() {
   const { state, saveRecord } = useMeal();
   const today = todayKey();
-  const dates = [...missingMealDates(state, today)].reverse();
+  const dates = missingMealDates(state, today);
   const [pending, setPending] = useState<{ message: string; action: () => void } | null>(null);
   const groups = dates.reduce<Record<string, string[]>>((accumulator, date) => {
     const month = monthOf(date);

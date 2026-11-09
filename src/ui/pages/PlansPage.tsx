@@ -140,11 +140,10 @@ export function PlansPage() {
 
           <section className="card">
             <h2 className="card-title">月度时间轴</h2>
-            <p className="muted plan-timeline__hint">横向为月份；每列左侧是事件，右侧是对应金额。</p>
+            <p className="muted plan-timeline__hint">横向为月份；每列左侧是支出事件，右侧是对应金额。</p>
             <div className="plan-timeline">
               {buckets.map((bucket) => {
                 const monthSpends = items.filter((item) => item.spendMonth === bucket.month);
-                const monthReplenishes = items.filter((item) => item.replenishMonth === bucket.month);
                 return (
                   <div className="plan-timeline__month" key={bucket.month}>
                     <strong className="plan-timeline__month-title">
@@ -152,7 +151,7 @@ export function PlansPage() {
                     </strong>
                     <div className="plan-timeline__events">
                       {monthSpends.map((item) => (
-                        <div className="plan-timeline__row" key={`spend-${item.id}`}>
+                        <div className="plan-timeline__row" key={item.id}>
                           <span className="plan-timeline__event">
                             <span className="plan-timeline__dot plan-timeline__dot--spend" aria-hidden="true" />
                             {item.title}
@@ -160,25 +159,9 @@ export function PlansPage() {
                           <span className="plan-timeline__amount negative">支出 {formatYuan(item.amount)}</span>
                         </div>
                       ))}
-                      {monthReplenishes.map((item) => (
-                        <div className="plan-timeline__row" key={`replenish-${item.id}`}>
-                          <span className="plan-timeline__event">
-                            <span
-                              className="plan-timeline__dot plan-timeline__dot--replenish"
-                              aria-hidden="true"
-                            />
-                            {item.title}
-                          </span>
-                          <span className="plan-timeline__amount positive">回补 {formatYuan(item.amount)}</span>
-                        </div>
-                      ))}
-                      {monthSpends.length === 0 && monthReplenishes.length === 0 && (
-                        <span className="plan-timeline__empty">本月无安排</span>
+                      {monthSpends.length === 0 && (
+                        <span className="plan-timeline__empty">本月无支出</span>
                       )}
-                    </div>
-                    <div className="plan-timeline__footer">
-                      <span>净额 {formatSignedYuan(bucket.net)}</span>
-                      <span>累计 {formatSignedYuan(bucket.cumulative)}</span>
                     </div>
                   </div>
                 );
